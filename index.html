@@ -1,0 +1,2128 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Sistem Pramuka SMKN 2 Marabahan</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232f6f4e'/%3E%3Cpath d='M32 10 50 48H14L32 10Z' fill='%23fff'/%3E%3Cpath d='M32 23 41 42H23l9-19Z' fill='%23d8c77e'/%3E%3C/svg%3E">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --ink: #203128;
+      --muted: #607166;
+      --line: #d8e6d8;
+      --panel: #ffffff;
+      --canvas: #f4f8ef;
+      --brand: #2f6f4e;
+      --brand-strong: #24543b;
+      --brand-soft: #e1f0e3;
+      --forest: #3d7d55;
+      --forest-soft: #edf7ee;
+      --khaki: #d8c77e;
+      --khaki-soft: #f6f0d8;
+      --accent: #a45a35;
+      --amber: #b8872f;
+      --danger: #b14a3c;
+      --app-vh: 100dvh;
+    }
+
+    * { box-sizing: border-box; }
+    html {
+      min-height: 100%;
+      background: var(--canvas);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      background:
+        radial-gradient(circle at top right, rgba(47, 111, 78, 0.11), transparent 28rem),
+        radial-gradient(circle at top left, rgba(216, 199, 126, 0.22), transparent 24rem),
+        var(--canvas);
+      color: var(--ink);
+      font-family: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    .page-view:not(.active) { display: none !important; }
+    .page-view.active { display: block; animation: enter 180ms ease-out; }
+    #page-login.active { display: grid; }
+    .font-extrabold { font-weight: 700 !important; }
+    .font-bold { font-weight: 600 !important; }
+    @keyframes enter {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      grid-template-columns: 292px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      align-self: start;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .nav-item.active {
+      background: var(--brand);
+      color: #ffffff;
+      box-shadow: 0 12px 24px rgba(47, 93, 80, 0.18);
+    }
+
+    .nav-item.active .nav-icon {
+      background: rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+    }
+
+    .mobile-logout { display: none; }
+
+    .soft-card {
+      background: var(--panel);
+      border: 1px solid rgba(223, 230, 214, 0.95);
+      box-shadow: 0 14px 30px rgba(38, 49, 38, 0.045);
+      border-radius: 8px !important;
+    }
+
+    .input {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .input:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(47, 93, 80, 0.12);
+    }
+
+    .btn-primary, .btn-dark, .btn-light {
+      min-height: 40px;
+      border-radius: 10px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .btn-primary {
+      background: var(--brand);
+      color: #ffffff;
+      box-shadow: 0 12px 22px rgba(47, 93, 80, 0.18);
+    }
+
+    .btn-primary:hover, .btn-dark:hover, .btn-light:hover { transform: translateY(-1px); }
+    .btn-primary:disabled, .btn-dark:disabled { opacity: .72; transform: none; cursor: wait; }
+    .btn-dark { background: var(--brand-strong); color: #ffffff; }
+    .btn-light { background: #fffefa; color: #334155; border: 1px solid var(--line); }
+
+    .status-radio input { display: none; }
+    .status-radio span {
+      min-width: 44px;
+      min-height: 34px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      color: #64748b;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .status-radio input:checked + span { color: #ffffff; border-color: transparent; }
+    .status-radio input[value="H"]:checked + span { background: var(--brand); }
+    .status-radio input[value="I"]:checked + span { background: var(--amber); }
+    .status-radio input[value="S"]:checked + span { background: var(--danger); }
+    .status-radio input[value="A"]:checked + span { background: #475569; }
+
+    .toast {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 80;
+      max-width: 360px;
+      transform: translateY(-12px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(15, 23, 42, 0.38);
+      backdrop-filter: blur(8px);
+    }
+
+    .modal-backdrop.active { display: flex; }
+
+    .content-wrap {
+      width: min(100%, 1180px);
+      margin-inline: auto;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      color: var(--brand);
+      transition: background 160ms ease, transform 160ms ease;
+    }
+
+    .icon-btn:hover {
+      background: var(--brand-soft);
+      transform: translateY(-1px);
+    }
+
+    .sidebar-logout {
+      margin-top: min(56px, 10vh);
+    }
+
+    .pager {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 14px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .pager-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pager button {
+      min-width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .pager button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .nilai-cell {
+      width: 68px;
+      min-width: 68px;
+      padding-inline: 8px;
+    }
+
+    .rekap-table th {
+      vertical-align: middle;
+    }
+
+    .rekap-table td {
+      vertical-align: middle;
+    }
+
+    .rekap-num {
+      min-width: 46px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      font-size: 13px;
+      line-height: 1.2;
+    }
+
+    .nilai-head {
+      min-width: 78px;
+      line-height: 1.15;
+    }
+
+    .nilai-head span {
+      display: block;
+      margin-top: 3px;
+      color: #64748b;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: none;
+    }
+
+    .rekap-table thead tr:first-child .nilai-head span {
+      color: rgba(255, 255, 255, .72);
+    }
+
+    .loading-card {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 14px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      background: #fbfdf8;
+      border-radius: 12px;
+      color: var(--ink);
+      box-shadow: 0 10px 22px rgba(36, 48, 43, .05);
+    }
+
+    .loading-card.active { display: flex; }
+
+    .loader-line {
+      position: relative;
+      width: 96px;
+      height: 5px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: var(--brand-soft);
+    }
+
+    .loader-line::after {
+      content: "";
+      position: absolute;
+      inset-block: 0;
+      left: -40%;
+      width: 40%;
+      border-radius: inherit;
+      background: var(--brand);
+      animation: loadLine 1s ease-in-out infinite;
+    }
+
+    @keyframes loadLine {
+      to { left: 100%; }
+    }
+
+    .nilai-skeleton {
+      position: relative;
+      overflow: hidden;
+      opacity: .72;
+      pointer-events: none;
+    }
+
+    .nilai-skeleton::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      transform: translateX(-100%);
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .7), transparent);
+      animation: shimmer 1.1s infinite;
+    }
+
+    @keyframes shimmer {
+      to { transform: translateX(100%); }
+    }
+
+    .bg-teal-700, .bg-teal-600, .bg-teal-500 { background-color: var(--forest) !important; }
+    .bg-slate-950 { background-color: var(--brand-strong) !important; }
+    .bg-teal-50 { background-color: var(--forest-soft) !important; }
+    .text-teal-700, .text-teal-600, .text-teal-500 { color: var(--forest) !important; }
+    .text-teal-300 { color: #d8efd8 !important; }
+    .text-sky-300 { color: #f4e7b2 !important; }
+    .bg-sky-50, .bg-violet-50 { background-color: var(--brand-soft) !important; }
+    .text-sky-700, .text-violet-700 { color: var(--brand) !important; }
+    .shadow-teal-900\/30 { box-shadow: 0 18px 30px rgba(36, 84, 59, .20) !important; }
+    .from-teal-500\/20 { --tw-gradient-from: rgba(47, 111, 78, .20) var(--tw-gradient-from-position) !important; }
+    .bg-amber-50 { background-color: var(--khaki-soft) !important; }
+    .text-amber-700 { color: var(--amber) !important; }
+    .text-red-700, .text-red-600 { color: var(--danger) !important; }
+    .bg-red-50 { background-color: #f9e7e2 !important; }
+
+    @media (max-width: 1100px) {
+      html, body {
+        min-height: var(--app-vh);
+        overflow-x: hidden;
+      }
+      .app-shell {
+        grid-template-columns: 1fr;
+        min-height: var(--app-vh);
+      }
+      .sidebar {
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        top: auto !important;
+        width: 100vw !important;
+        height: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
+        min-height: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
+        max-height: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
+        overflow: visible;
+        z-index: 60;
+        border-radius: 0;
+        padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+        border: 0;
+        border-top: 1px solid rgba(216, 230, 216, .95);
+        background: rgba(255, 255, 255, .97) !important;
+        box-shadow: 0 -8px 24px rgba(32, 49, 40, .08);
+        backdrop-filter: blur(18px);
+        transform: translate3d(0, 0, 0);
+      }
+      .sidebar-brand, .sidebar-profile, .logout-label { display: none !important; }
+      .mobile-logout { display: flex; }
+      .btn-light .logout-label { display: none; }
+      .sidebar-nav {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 0;
+        margin-top: 0 !important;
+        height: 70px;
+        align-items: center;
+        justify-items: center;
+      }
+      .sidebar-nav > .nav-item { margin-top: 0 !important; }
+      .nav-item {
+        min-width: 0;
+        min-height: 70px;
+        height: 70px;
+        width: 100% !important;
+        justify-content: center;
+        padding: 0;
+        border-radius: 0;
+        box-shadow: none;
+        flex-direction: column;
+        gap: 4px;
+        background: transparent !important;
+        color: #6b7280 !important;
+      }
+      .nav-item:hover, .btn-primary:hover, .btn-dark:hover, .btn-light:hover {
+        transform: none;
+      }
+      .nav-icon {
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 10px !important;
+        background: #f1f5f9 !important;
+        color: #8190a2 !important;
+        font-size: 14px;
+        flex: 0 0 30px;
+      }
+      .nav-label {
+        display: block !important;
+        min-width: 0;
+        font-size: 10px;
+        line-height: 1.1;
+        font-weight: 700;
+        color: #6b7280;
+        max-width: none;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: nowrap;
+      }
+      .nav-item.active {
+        background: transparent !important;
+        box-shadow: none;
+      }
+      .nav-item.active .nav-label {
+        display: block !important;
+        color: var(--brand);
+      }
+      .nav-item.active .nav-icon {
+        background: var(--brand) !important;
+        color: #ffffff !important;
+        box-shadow: 0 5px 12px rgba(47, 111, 78, .22);
+      }
+      .sidebar > .btn-light {
+        display: none;
+      }
+      .pager {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .pager-actions {
+        justify-content: space-between;
+      }
+      #page-presensi .btn-light {
+        min-height: 38px;
+        font-size: 13px;
+      }
+      main {
+        padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important;
+      }
+      main .page-view.active {
+        padding-bottom: 24px !important;
+      }
+    }
+
+    @media print {
+      @page { size: A4 landscape; margin: 12mm 10mm 14mm; }
+      body {
+        background: #ffffff !important;
+        color: #111827 !important;
+        font-family: Arial, Helvetica, sans-serif;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .print-hidden, .sidebar, #toast, .modal-backdrop { display: none !important; }
+      .app-shell { display: block; }
+      main { padding: 0 !important; }
+      .page-view { display: none !important; }
+      #page-rekap { display: block !important; }
+      .content-wrap { width: 100%; }
+      .soft-card { box-shadow: none; border: 0; background: #ffffff; }
+      .print-title { display: block !important; }
+      #page-rekap article {
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+      }
+      #page-rekap .print-summary-header { display: none !important; }
+      #page-rekap .overflow-hidden,
+      #page-rekap .overflow-x-auto { overflow: visible !important; border: 0 !important; }
+      #page-rekap table {
+        width: 100%;
+        table-layout: fixed;
+        font-size: 8.5px;
+        border: 1px solid #374151;
+      }
+      #page-rekap th, #page-rekap td {
+        border: 1px solid #c7ced6;
+        padding: 4px 3px !important;
+        white-space: normal;
+        line-height: 1.2;
+      }
+      #page-rekap thead { display: table-header-group; }
+      #page-rekap tr { page-break-inside: avoid; }
+      #page-rekap th:nth-child(1), #page-rekap td:nth-child(1) { width: 3.5%; }
+      #page-rekap th:nth-child(2), #page-rekap td:nth-child(2) { width: 18%; text-align: left; }
+      #page-rekap th:nth-child(n+3), #page-rekap td:nth-child(n+3) { width: 4.9%; }
+      #page-rekap th:last-child, #page-rekap td:last-child { width: 6%; }
+      #page-rekap thead tr:first-child { background: #285b3f !important; color: #ffffff !important; }
+      #page-rekap thead tr:nth-child(2) { background: #edf3ed !important; color: #334155 !important; }
+      #page-rekap .print-title:first-child {
+        margin-bottom: 14px !important;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #285b3f;
+      }
+      #page-rekap .print-title:first-child h1 { font-size: 16px !important; letter-spacing: .2px; }
+      #page-rekap .print-title:first-child p { margin-top: 3px !important; }
+      #page-rekap .print-title:last-child { page-break-inside: avoid; margin-top: 22px !important; }
+      #page-rekap .print-title:last-child .grid { gap: 80px; }
+      #page-rekap .rekap-num { font-size: 8.5px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="toast" class="toast soft-card rounded-2xl p-4">
+    <div class="flex gap-3">
+      <div id="toastIcon" class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center">
+        <i class="fa-solid fa-check"></i>
+      </div>
+      <div>
+        <p id="toastTitle" class="font-extrabold text-slate-900">Berhasil</p>
+        <p id="toastMessage" class="text-sm text-slate-500 mt-0.5">Data tersimpan.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalEditSiswa" class="modal-backdrop">
+    <div class="soft-card w-full max-w-lg p-6">
+      <div class="flex items-start justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-2xl font-semibold text-slate-950">Edit Anggota</h2>
+          <p class="text-sm text-slate-500 mt-1">Perubahan NIS ikut memperbarui presensi dan nilai terkait.</p>
+        </div>
+        <button type="button" onclick="closeEditSiswa()" class="btn-light w-11 h-11">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleUpdateSiswa(event)" class="space-y-4">
+        <input type="hidden" id="editOldNis">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-2 uppercase">NIS</label>
+          <input id="editNis" class="input" required>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-2 uppercase">Nama Lengkap</label>
+          <input id="editNama" class="input" required>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-2 uppercase">Sangga</label>
+          <input id="editSangga" class="input" required>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3 pt-2">
+          <button type="submit" id="btnUpdateSiswa" class="btn-primary px-5 flex-1">
+            <i class="fa-solid fa-floppy-disk"></i><span>Simpan Perubahan</span>
+          </button>
+          <button type="button" onclick="closeEditSiswa()" class="btn-light px-5">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modalDeleteSiswa" class="modal-backdrop">
+    <div class="soft-card w-full max-w-md p-6">
+      <div class="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mb-5">
+        <i class="fa-solid fa-trash"></i>
+      </div>
+      <h2 class="text-xl font-semibold text-slate-950">Hapus Anggota?</h2>
+      <p id="deleteSiswaText" class="text-sm text-slate-500 mt-2 leading-6"></p>
+      <input type="hidden" id="deleteNis">
+      <div class="flex flex-col sm:flex-row gap-3 mt-6">
+        <button type="button" id="btnConfirmDeleteSiswa" onclick="confirmDeleteSiswa()" class="min-h-11 rounded-xl bg-red-600 text-white font-semibold px-5 flex-1">
+          <i class="fa-solid fa-trash mr-2"></i>Hapus
+        </button>
+        <button type="button" onclick="closeDeleteSiswa()" class="btn-light px-5">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalProfil" class="modal-backdrop">
+    <div class="soft-card w-full max-w-lg p-6">
+      <div class="flex items-start justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-2xl font-semibold text-slate-950">Edit Profil Pembina</h2>
+          <p class="text-sm text-slate-500 mt-1">Perbarui nama dan username. Kosongkan password jika tidak ingin diganti.</p>
+        </div>
+        <button type="button" onclick="closeProfil()" class="btn-light w-11 h-11">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleUpdateProfil(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-2 uppercase">Nama Pembina</label>
+          <input id="profilNama" class="input" required>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-2 uppercase">Username</label>
+          <input id="profilUsername" class="input" required>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-2 uppercase">Password Baru</label>
+          <input id="profilPassword" type="password" class="input" placeholder="Kosongkan jika tetap">
+        </div>
+        <button type="submit" id="btnUpdateProfil" class="btn-primary w-full px-5">
+          <i class="fa-solid fa-user-gear"></i><span>Simpan Profil</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <section id="page-login" class="page-view active min-h-screen grid place-items-center p-5 print-hidden">
+    <div class="w-full max-w-[920px] soft-card rounded-2xl overflow-hidden grid md:grid-cols-[1fr_0.95fr]">
+      <div class="p-7 md:p-10 bg-slate-950 text-white relative overflow-hidden">
+        <div class="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-teal-500/20 to-transparent"></div>
+        <div class="relative z-10">
+          <div class="w-14 h-14 rounded-2xl bg-teal-500 text-white flex items-center justify-center shadow-xl shadow-teal-900/30">
+            <i class="fa-solid fa-campground text-2xl"></i>
+          </div>
+          <h1 class="mt-8 text-3xl md:text-4xl font-semibold leading-tight">Sistem Pembinaan Pramuka</h1>
+          <p class="mt-4 text-slate-300 max-w-md leading-7">Kelola anggota, presensi latihan, nilai karakter, dan rekap akhir eskul Pramuka dalam satu panel kerja.</p>
+          <div class="mt-8 grid grid-cols-3 gap-3 text-sm">
+            <div class="rounded-2xl bg-white/8 border border-white/10 p-4">
+              <i class="fa-solid fa-users text-teal-300"></i>
+              <p class="mt-3 font-bold">Anggota</p>
+            </div>
+            <div class="rounded-2xl bg-white/8 border border-white/10 p-4">
+              <i class="fa-solid fa-clipboard-check text-amber-300"></i>
+              <p class="mt-3 font-bold">Presensi</p>
+            </div>
+            <div class="rounded-2xl bg-white/8 border border-white/10 p-4">
+              <i class="fa-solid fa-chart-line text-sky-300"></i>
+              <p class="mt-3 font-bold">Rekap</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-7 md:p-10">
+        <p class="text-sm font-bold text-teal-700">SMKN 2 Marabahan</p>
+          <h2 class="text-3xl font-semibold text-slate-950 mt-2">Masuk Pembina</h2>
+        <p class="text-slate-500 mt-2">Gunakan akun pembina untuk membuka data binaan masing-masing.</p>
+
+        <div id="loginError" class="hidden mt-6 p-4 bg-red-50 text-red-700 text-sm rounded-2xl border border-red-100"></div>
+
+        <form onsubmit="handleLogin(event)" class="mt-7 space-y-4">
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">Username</label>
+            <div class="relative">
+              <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input type="text" id="loginUsername" required placeholder="Masukkan username" class="input pl-11">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">Password</label>
+            <div class="relative">
+              <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input type="password" id="loginPassword" required placeholder="********" class="input pl-11">
+            </div>
+          </div>
+          <button type="submit" id="btnLogin" class="btn-primary w-full">
+            <span>Masuk</span><i class="fa-solid fa-arrow-right-to-bracket"></i>
+          </button>
+        </form>
+
+        <div class="mt-6 rounded-2xl bg-slate-50 border border-slate-200 p-4 text-sm text-slate-600">
+          Akun percobaan: <b>budi</b> atau <b>siti</b>, password <b>12345</b>.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="main-app" class="hidden app-shell">
+    <aside class="sidebar print-hidden bg-white border-r border-slate-200 p-4">
+      <div class="sidebar-brand flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-teal-700 text-white flex items-center justify-center">
+          <i class="fa-solid fa-campground text-lg"></i>
+        </div>
+        <div>
+          <p class="text-lg font-extrabold text-slate-950">Pramuka</p>
+          <p class="text-xs font-semibold text-slate-500">SMKN 2 Marabahan</p>
+        </div>
+      </div>
+
+      <div class="sidebar-profile mt-4 rounded-2xl bg-slate-50 border border-slate-200 p-3">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="text-[11px] font-bold text-slate-500 uppercase">Pembina Aktif</p>
+            <p id="sidebarName" class="font-extrabold text-slate-950 mt-1 truncate">-</p>
+            <p id="sidebarId" class="text-sm text-teal-700 font-semibold">-</p>
+          </div>
+          <button onclick="openProfil()" class="icon-btn shrink-0" title="Edit profil" aria-label="Edit profil pembina">
+            <i class="fa-solid fa-user-pen"></i>
+          </button>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav mt-4 space-y-1">
+        <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item active w-full rounded-xl px-4 py-2 flex items-center gap-3 text-slate-600 font-bold">
+          <span class="nav-icon w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500"><i class="fa-solid fa-chart-pie"></i></span>
+          <span class="nav-label">Beranda</span>
+        </button>
+        <button onclick="switchView('siswa')" id="nav-siswa" class="nav-item w-full rounded-xl px-4 py-2 flex items-center gap-3 text-slate-600 font-bold">
+          <span class="nav-icon w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500"><i class="fa-solid fa-users"></i></span>
+          <span class="nav-label">Anggota</span>
+        </button>
+        <button onclick="switchView('presensi')" id="nav-presensi" class="nav-item w-full rounded-xl px-4 py-2 flex items-center gap-3 text-slate-600 font-bold">
+          <span class="nav-icon w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500"><i class="fa-solid fa-clipboard-user"></i></span>
+          <span class="nav-label">Presensi</span>
+        </button>
+        <button onclick="switchView('nilai')" id="nav-nilai" class="nav-item w-full rounded-xl px-4 py-2 flex items-center gap-3 text-slate-600 font-bold">
+          <span class="nav-icon w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500"><i class="fa-solid fa-star"></i></span>
+          <span class="nav-label">Nilai</span>
+        </button>
+        <button onclick="switchView('rekap')" id="nav-rekap" class="nav-item w-full rounded-xl px-4 py-2 flex items-center gap-3 text-slate-600 font-bold">
+          <span class="nav-icon w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500"><i class="fa-solid fa-folder-open"></i></span>
+          <span class="nav-label">Rekap</span>
+        </button>
+        <button onclick="logout()" id="nav-logout" class="nav-item mobile-logout w-full rounded-xl px-4 py-2 flex items-center gap-3 text-slate-600 font-bold">
+          <span class="nav-icon w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-red-600"><i class="fa-solid fa-arrow-right-from-bracket"></i></span>
+          <span class="nav-label">Keluar</span>
+        </button>
+      </nav>
+
+      <button onclick="logout()" class="btn-light w-full sidebar-logout">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i><span class="logout-label">Keluar</span>
+      </button>
+    </aside>
+
+    <main class="min-w-0 p-4 md:p-6 lg:p-8">
+      <div class="content-wrap">
+      <header class="print-hidden flex flex-col lg:flex-row lg:items-end justify-between gap-5 mb-6">
+        <div>
+          <p id="headerEyebrow" class="text-sm font-bold text-teal-700">Dashboard</p>
+          <h1 id="headerName" class="text-2xl md:text-3xl font-semibold tracking-normal text-slate-950 mt-1">Halo!</h1>
+          <p id="headerPageTitle" class="text-slate-500 mt-2">Ringkasan kegiatan dan kesiapan data eskul Pramuka.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="refreshAll()" class="btn-light px-4">
+            <i class="fa-solid fa-rotate"></i><span class="hidden sm:inline">Muat Ulang</span>
+          </button>
+          <button onclick="switchView('presensi')" class="btn-primary px-5">
+            <i class="fa-solid fa-clipboard-check"></i><span>Presensi</span>
+          </button>
+        </div>
+      </header>
+
+      <section id="page-dashboard" class="page-view active space-y-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <article class="soft-card rounded-3xl p-4">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-bold text-slate-500">Anggota Binaan</p>
+              <span class="w-10 h-10 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center"><i class="fa-solid fa-users"></i></span>
+            </div>
+            <p id="statSiswa" class="text-3xl font-extrabold mt-3">0</p>
+          </article>
+          <article class="soft-card rounded-3xl p-4">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-bold text-slate-500">Latihan Terekam</p>
+              <span class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center"><i class="fa-solid fa-calendar-check"></i></span>
+            </div>
+            <p id="statPertemuan" class="text-3xl font-extrabold mt-3">0</p>
+          </article>
+          <article class="soft-card rounded-3xl p-4">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-bold text-slate-500">Rata-rata Akhir</p>
+              <span class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center"><i class="fa-solid fa-chart-line"></i></span>
+            </div>
+            <p id="statRata" class="text-3xl font-extrabold mt-3">0</p>
+          </article>
+          <article class="soft-card rounded-3xl p-4">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-bold text-slate-500">Sangga Aktif</p>
+              <span class="w-10 h-10 rounded-2xl bg-violet-50 text-violet-700 flex items-center justify-center"><i class="fa-solid fa-flag"></i></span>
+            </div>
+            <p id="statSangga" class="text-3xl font-extrabold mt-3">0</p>
+          </article>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr] gap-6">
+          <article class="soft-card rounded-3xl p-5">
+            <div class="flex items-center justify-between gap-4 mb-5">
+              <div>
+                <h2 class="text-xl font-extrabold text-slate-950">Anggota Terbaru</h2>
+                <p class="text-sm text-slate-500 mt-1">Data siswa binaan yang siap dipresensi.</p>
+              </div>
+              <button onclick="switchView('siswa')" class="btn-light px-4"><i class="fa-solid fa-plus"></i></button>
+            </div>
+            <div id="dashboardSiswaList" class="space-y-3"></div>
+          </article>
+
+          <article class="soft-card rounded-3xl p-5">
+            <h2 class="text-xl font-extrabold text-slate-950">Alur Kerja Pembina</h2>
+            <div class="mt-5 space-y-4">
+              <div class="flex gap-4">
+                <span class="w-10 h-10 rounded-2xl bg-teal-700 text-white flex items-center justify-center font-extrabold">1</span>
+                <div>
+                  <p class="font-bold">Daftarkan anggota</p>
+                  <p class="text-sm text-slate-500">Masukkan NIS, nama, dan sangga setiap peserta.</p>
+                </div>
+              </div>
+              <div class="flex gap-4">
+                <span class="w-10 h-10 rounded-2xl bg-teal-700 text-white flex items-center justify-center font-extrabold">2</span>
+                <div>
+                  <p class="font-bold">Catat presensi latihan</p>
+                  <p class="text-sm text-slate-500">Presensi tanggal yang sama akan diperbarui otomatis.</p>
+                </div>
+              </div>
+              <div class="flex gap-4">
+                <span class="w-10 h-10 rounded-2xl bg-teal-700 text-white flex items-center justify-center font-extrabold">3</span>
+                <div>
+                  <p class="font-bold">Isi nilai karakter</p>
+                  <p class="text-sm text-slate-500">Nilai lama muncul kembali saat siswa dipilih.</p>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="page-siswa" class="page-view space-y-5">
+        <article class="soft-card rounded-3xl p-5">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-xl font-extrabold text-slate-950">Tambah Anggota Binaan</h2>
+              <p class="text-sm text-slate-500 mt-1">Data siswa akan terhubung ke pembina yang sedang login.</p>
+            </div>
+          </div>
+          <form onsubmit="handleAddSiswa(event)" class="grid grid-cols-1 md:grid-cols-[0.8fr_1.4fr_0.9fr_auto] gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">NIS</label>
+              <input type="text" id="addNis" required class="input" placeholder="Contoh: 10231">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Nama Lengkap</label>
+              <input type="text" id="addNama" required class="input" placeholder="Nama anggota">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Sangga</label>
+              <input type="text" id="addSangga" required class="input" placeholder="Contoh: Perintis">
+            </div>
+            <div class="flex items-end">
+              <button type="submit" id="btnAddSiswa" class="btn-dark px-6 w-full md:w-auto">
+                <i class="fa-solid fa-plus"></i><span>Simpan</span>
+              </button>
+            </div>
+          </form>
+        </article>
+
+        <article class="soft-card rounded-3xl p-5">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5">
+            <div>
+              <h2 class="text-xl font-extrabold text-slate-950">Daftar Anggota</h2>
+              <p class="text-sm text-slate-500 mt-1">Cari berdasarkan nama, NIS, atau sangga.</p>
+            </div>
+            <div class="relative w-full lg:w-80">
+              <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input id="searchSiswa" oninput="pagination.siswa = 1; renderTableSiswa()" class="input pl-11" placeholder="Cari anggota">
+            </div>
+          </div>
+          <div class="overflow-hidden rounded-2xl border border-slate-200">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+                  <tr>
+                    <th class="p-4">NIS</th>
+                    <th class="p-4">Nama Siswa</th>
+                    <th class="p-4">Sangga</th>
+                    <th class="p-4 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tableSiswaBody" class="divide-y divide-slate-100 text-sm"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="pagerSiswa" class="pager"></div>
+        </article>
+      </section>
+
+      <section id="page-presensi" class="page-view space-y-5">
+        <article class="soft-card rounded-3xl p-5">
+          <form onsubmit="handleSimpanPresensi(event)">
+            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-6">
+              <div>
+                <h2 class="text-xl font-extrabold text-slate-950">Presensi Pertemuan</h2>
+                <p class="text-sm text-slate-500 mt-1">Pilih tanggal, data lama akan dimuat otomatis jika sudah pernah disimpan.</p>
+                <div id="presensiLoading" class="loading-card">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <span class="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center">
+                      <i class="fa-solid fa-clipboard-check"></i>
+                    </span>
+                    <div class="min-w-0">
+                      <p class="text-sm font-semibold text-slate-900">Mengecek presensi tersimpan</p>
+                      <p id="presensiLoadText" class="text-xs text-slate-500 mt-0.5">Menyesuaikan data berdasarkan tanggal latihan.</p>
+                    </div>
+                  </div>
+                  <span class="loader-line"></span>
+                </div>
+                <p id="presensiStatus" class="hidden mt-3 text-xs font-semibold text-teal-700"></p>
+              </div>
+              <div class="w-full lg:w-72">
+                <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Tanggal Latihan</label>
+                <input type="date" id="tglPresensi" required class="input" onchange="loadPresensiTanggal()">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-[220px_1fr_auto_auto] gap-3 mb-5 print-hidden">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Sangga</label>
+                <select id="filterSanggaPresensi" class="input" onchange="pagination.presensi = 1; renderTablePresensi()"></select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Cari Anggota</label>
+                <div class="relative">
+                  <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                  <input id="searchPresensi" oninput="pagination.presensi = 1; renderTablePresensi()" class="input pl-11" placeholder="Nama atau NIS">
+                </div>
+              </div>
+              <div class="flex items-end">
+                <button type="button" onclick="setBulkPresensi('H')" class="btn-light px-4 w-full">
+                  <i class="fa-solid fa-check"></i><span>Semua Hadir</span>
+                </button>
+              </div>
+              <div class="flex items-end">
+                <button type="button" onclick="setBulkPresensi('A')" class="btn-light px-4 w-full">
+                  <i class="fa-solid fa-user-xmark"></i><span>Semua Alpa</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-hidden rounded-2xl border border-slate-200">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+                    <tr>
+                      <th class="p-4 min-w-[240px]">Anggota</th>
+                      <th class="p-4 text-center">Hadir</th>
+                      <th class="p-4 text-center">Izin</th>
+                      <th class="p-4 text-center">Sakit</th>
+                      <th class="p-4 text-center">Alpa</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablePresensiBody" class="divide-y divide-slate-100 text-sm"></tbody>
+                </table>
+              </div>
+            </div>
+            <div id="pagerPresensi" class="pager"></div>
+
+            <button type="submit" id="btnSimpanPresensi" class="btn-primary w-full mt-6">
+              <i class="fa-solid fa-floppy-disk"></i><span>Simpan Presensi</span>
+            </button>
+          </form>
+        </article>
+      </section>
+
+      <section id="page-nilai" class="page-view space-y-5">
+        <article class="soft-card rounded-3xl p-5">
+          <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-xl font-extrabold text-slate-950">Input Nilai Per Sangga</h2>
+              <p class="text-sm text-slate-500 mt-1">Isi nilai banyak anggota sekaligus. Untuk data besar, fitur ini direkomendasikan dibuka dari desktop atau laptop.</p>
+              <div id="nilaiLoading" class="loading-card">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center">
+                    <i class="fa-solid fa-star"></i>
+                  </span>
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-slate-900">Mengecek nilai tersimpan</p>
+                    <p id="nilaiLoadText" class="text-xs text-slate-500 mt-0.5">Memuat nilai sesuai sangga dan anggota aktif.</p>
+                  </div>
+                </div>
+                <span class="loader-line"></span>
+              </div>
+            </div>
+            <div class="w-full lg:w-[30rem] grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Sangga</label>
+                <select id="filterSanggaNilai" class="input cursor-pointer" onchange="loadNilaiSangga()"></select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Cari Anggota</label>
+                <div class="relative">
+                  <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                  <input id="searchNilai" oninput="renderNilaiTable()" class="input pl-11" placeholder="Nama atau NIS">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <form onsubmit="handleSimpanNilaiBatch(event)" id="formNilai">
+            <div class="overflow-hidden rounded-2xl border border-slate-200">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs md:text-sm whitespace-nowrap">
+                  <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+                    <tr>
+                      <th class="p-3 min-w-[180px]">Anggota</th>
+                      <th class="p-3 text-center nilai-head" title="N2 Ketaqwaan, bobot 5%">N2<span>Ketaqwaan 5%</span></th>
+                      <th class="p-3 text-center nilai-head" title="N3 Disiplin, bobot 10%">N3<span>Disiplin 10%</span></th>
+                      <th class="p-3 text-center nilai-head" title="N4 Sikap dan Karakter, bobot 15%">N4<span>Sikap 15%</span></th>
+                      <th class="p-3 text-center nilai-head" title="N5 Keaktifan, bobot 10%">N5<span>Aktif 10%</span></th>
+                      <th class="p-3 text-center nilai-head" title="N6 Gotong Royong, bobot 10%">N6<span>Gotong 10%</span></th>
+                      <th class="p-3 text-center nilai-head" title="N7 Kepemimpinan, bobot 10%">N7<span>Pimpin 10%</span></th>
+                      <th class="p-3 text-center nilai-head" title="N8 Keterampilan, bobot 20%">N8<span>Trampil 20%</span></th>
+                      <th class="p-3 text-center nilai-head" title="N9 Partisipasi, bobot 10%">N9<span>Partisipasi 10%</span></th>
+                    </tr>
+                  </thead>
+                  <tbody id="tableNilaiBody" class="divide-y divide-slate-100"></tbody>
+                </table>
+              </div>
+            </div>
+            <p id="nilaiInfo" class="text-xs text-slate-500 mt-3"></p>
+            <button type="submit" id="btnSimpanNilai" class="btn-dark w-full mt-6">
+              <i class="fa-solid fa-floppy-disk"></i><span>Simpan Nilai Sangga Ini</span>
+            </button>
+          </form>
+        </article>
+      </section>
+
+      <section id="page-rekap" class="page-view space-y-5">
+        <article class="soft-card rounded-3xl p-5">
+          <div class="print-title hidden text-center mb-5">
+            <h1 class="text-xl font-bold uppercase text-slate-950">Rekapitulasi Penilaian Ekstrakurikuler Pramuka</h1>
+            <p class="text-sm font-semibold text-slate-700 mt-1">SMKN 2 Marabahan</p>
+            <p id="printPembina" class="text-xs text-slate-600 mt-2">Pembina: -</p>
+            <p id="printFilter" class="text-xs text-slate-600 mt-1">Cakupan: Semua Sangga</p>
+          </div>
+          <div class="print-summary-header flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 border-b border-slate-100 pb-5">
+            <div>
+              <h2 class="text-2xl font-extrabold text-slate-950">Rekapitulasi Penilaian Akhir</h2>
+              <p class="text-sm font-bold text-teal-700 mt-1" id="infoRekap">Total Latihan Terekam: 0 Kali</p>
+            </div>
+            <button onclick="printRekap()" class="btn-dark px-5 print-hidden">
+              <i class="fa-solid fa-print"></i><span>Cetak</span>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-3 mb-5 print-hidden">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Sangga</label>
+              <select id="filterSanggaRekap" class="input" onchange="pagination.rekap = 1; renderRekapTable()"></select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Cari Anggota</label>
+              <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input id="searchRekap" oninput="pagination.rekap = 1; renderRekapTable()" class="input pl-11" placeholder="Nama, NIS, atau sangga">
+              </div>
+            </div>
+          </div>
+
+          <div id="rekapError" class="hidden mb-4 p-4 bg-red-50 text-red-700 rounded-2xl text-sm font-semibold"></div>
+
+          <div class="overflow-hidden rounded-2xl border border-slate-200">
+            <div class="overflow-x-auto">
+              <table class="rekap-table w-full text-left border-collapse text-xs md:text-sm whitespace-nowrap">
+                <thead>
+                  <tr class="bg-slate-900 text-white">
+                    <th class="p-3 text-center">No</th>
+                    <th class="p-3 min-w-[180px]">Nama Siswa</th>
+                    <th class="p-3 text-center" colspan="4">Presensi</th>
+                    <th class="p-3 text-center text-teal-200">Skor H</th>
+                    <th class="p-3 text-center nilai-head" title="N2 Ketaqwaan, bobot 5%">N2<span>Ketaqwaan 5%</span></th>
+                    <th class="p-3 text-center nilai-head" title="N3 Disiplin, bobot 10%">N3<span>Disiplin 10%</span></th>
+                    <th class="p-3 text-center nilai-head" title="N4 Sikap dan Karakter, bobot 15%">N4<span>Sikap 15%</span></th>
+                    <th class="p-3 text-center nilai-head" title="N5 Keaktifan, bobot 10%">N5<span>Aktif 10%</span></th>
+                    <th class="p-3 text-center nilai-head" title="N6 Gotong Royong, bobot 10%">N6<span>Gotong 10%</span></th>
+                    <th class="p-3 text-center nilai-head" title="N7 Kepemimpinan, bobot 10%">N7<span>Pimpin 10%</span></th>
+                    <th class="p-3 text-center text-amber-200 nilai-head" title="N8 Keterampilan, bobot 20%">N8<span>Trampil 20%</span></th>
+                    <th class="p-3 text-center nilai-head" title="N9 Partisipasi, bobot 10%">N9<span>Partisipasi 10%</span></th>
+                    <th class="p-3 text-center bg-teal-700">Akhir</th>
+                  </tr>
+                  <tr class="bg-slate-50 text-[10px] uppercase text-slate-500">
+                    <th class="p-2"></th>
+                    <th class="p-2">Identitas</th>
+                    <th class="p-2 text-center">H</th>
+                    <th class="p-2 text-center">I</th>
+                    <th class="p-2 text-center">S</th>
+                    <th class="p-2 text-center">A</th>
+                    <th class="p-2 text-center">10%</th>
+                    <th class="p-2 text-center">Taqwa</th>
+                    <th class="p-2 text-center">Disiplin</th>
+                    <th class="p-2 text-center">Sikap</th>
+                    <th class="p-2 text-center">Aktif</th>
+                    <th class="p-2 text-center">Gotong</th>
+                    <th class="p-2 text-center">Pimpin</th>
+                    <th class="p-2 text-center">Trampil</th>
+                    <th class="p-2 text-center">Partisipasi</th>
+                    <th class="p-2 text-center"></th>
+                  </tr>
+                </thead>
+                <tbody id="tableRekapBody" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="pagerRekap" class="pager print-hidden"></div>
+          <div class="print-title hidden mt-8">
+            <div class="grid grid-cols-2 gap-12 text-sm text-slate-800">
+              <div>
+                <p>Mengetahui,</p>
+                <p class="font-semibold">Waka Kesiswaan</p>
+                <div class="h-16"></div>
+                <p class="border-t border-slate-400 pt-1">Nama Terang</p>
+              </div>
+              <div class="text-right">
+                <p>Marabahan, <span id="printTanggal"></span></p>
+                <p class="font-semibold">Pembina Pramuka</p>
+                <div class="h-16"></div>
+                <p class="border-t border-slate-400 pt-1" id="printNamaPembina">Nama Pembina</p>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+      </div>
+    </main>
+  </section>
+
+  <script>
+    let session = { status: false, idPembina: null, nama: null };
+    let dataSiswa = [];
+    let lastRekap = { rekap: [], totalPertemuan: 0 };
+    let toastTimer = null;
+    const SESSION_KEY = 'pramukaSession';
+    const PAGE_SIZE = 10;
+    const pagination = {
+      siswa: 1,
+      presensi: 1,
+      rekap: 1
+    };
+    let presensiDraft = {};
+    let nilaiDraft = {};
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzy5D-tmKoq0kJI4FbTJY0hvsGNSuqXsUfEfSPmMpMhny7WJ94y280Ddp_EU93_Gof0BQ/exec';
+    const apiPending = {};
+
+    const aspekNilai = [
+      { id: 'n2', label: '2. Ketaqwaan', bobot: '5%', icon: 'fa-hands-praying' },
+      { id: 'n3', label: '3. Disiplin', bobot: '10%', icon: 'fa-shield-halved' },
+      { id: 'n4', label: '4. Sikap & Karakter', bobot: '15%', icon: 'fa-heart' },
+      { id: 'n5', label: '5. Keaktifan', bobot: '10%', icon: 'fa-person-running' },
+      { id: 'n6', label: '6. Gotong Royong', bobot: '10%', icon: 'fa-people-carry-box' },
+      { id: 'n7', label: '7. Kepemimpinan', bobot: '10%', icon: 'fa-flag' },
+      { id: 'n8', label: '8. Keterampilan', bobot: '20%', icon: 'fa-compass-drafting' },
+      { id: 'n9', label: '9. Partisipasi', bobot: '10%', icon: 'fa-comments' }
+    ];
+
+    function apiCall(action, args) {
+      return new Promise((resolve, reject) => {
+        if (!GAS_API_URL) {
+          reject(new Error('URL API Apps Script belum dikonfigurasi.'));
+          return;
+        }
+
+        const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        const callbackName = '__pramukaApi_' + requestId.replace(/\W/g, '_');
+        const script = document.createElement('script');
+        const payload = JSON.stringify({ action, args });
+        const timeout = window.setTimeout(() => {
+          cleanup();
+          reject(new Error('Server terlalu lama merespons.'));
+        }, 45000);
+
+        function cleanup() {
+          window.clearTimeout(timeout);
+          delete apiPending[requestId];
+          delete window[callbackName];
+          script.remove();
+        }
+
+        apiPending[requestId] = { resolve, reject, cleanup };
+        window[callbackName] = data => {
+          const pending = apiPending[requestId];
+          if (!pending) return;
+          pending.cleanup();
+          if (data && data.ok) {
+            pending.resolve(data.result);
+          } else {
+            pending.reject(new Error((data && data.message) || 'Permintaan gagal.'));
+          }
+        };
+
+        script.onerror = () => {
+          cleanup();
+          reject(new Error('Endpoint Apps Script tidak bisa diakses.'));
+        };
+        script.src = GAS_API_URL
+          + '?requestId=' + encodeURIComponent(requestId)
+          + '&callback=' + encodeURIComponent(callbackName)
+          + '&payload=' + encodeURIComponent(payload);
+        document.head.appendChild(script);
+      });
+    }
+
+    function createScriptRun(successHandler, failureHandler) {
+      return new Proxy({}, {
+        get(_, prop) {
+          if (prop === 'withSuccessHandler') {
+            return handler => createScriptRun(handler, failureHandler);
+          }
+          if (prop === 'withFailureHandler') {
+            return handler => createScriptRun(successHandler, handler);
+          }
+          return (...args) => {
+            apiCall(String(prop), args)
+              .then(result => {
+                if (typeof successHandler === 'function') successHandler(result);
+              })
+              .catch(error => {
+                if (typeof failureHandler === 'function') {
+                  failureHandler(error);
+                } else {
+                  showToast('Koneksi gagal', error.message, 'error');
+                }
+              });
+          };
+        }
+      });
+    }
+
+    if (!window.google || !window.google.script || !window.google.script.run) {
+      window.google = window.google || {};
+      window.google.script = window.google.script || {};
+      window.google.script.run = createScriptRun();
+      window.google.script.host = window.google.script.host || {};
+    }
+
+    function updateAppViewportHeight() {
+      const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      document.documentElement.style.setProperty('--app-vh', `${height}px`);
+      try {
+        if (window.innerWidth <= 1100 && window.google && google.script && google.script.host && typeof google.script.host.setHeight === 'function') {
+          google.script.host.setHeight(Math.ceil(height));
+        }
+      } catch (error) {
+        // Host resize is only available in some Apps Script containers.
+      }
+    }
+
+    window.addEventListener('resize', updateAppViewportHeight);
+    window.addEventListener('orientationchange', updateAppViewportHeight);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateAppViewportHeight);
+      window.visualViewport.addEventListener('scroll', updateAppViewportHeight);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateAppViewportHeight();
+      document.getElementById('tglPresensi').valueAsDate = new Date();
+      restoreSession();
+    });
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnLogin');
+      const errorBox = document.getElementById('loginError');
+      setBusy(btn, true, '<i class="fa-solid fa-circle-notch fa-spin"></i> Memeriksa...');
+      errorBox.classList.add('hidden');
+
+      google.script.run
+        .withSuccessHandler(res => {
+          setBusy(btn, false, '<span>Masuk</span><i class="fa-solid fa-arrow-right-to-bracket"></i>');
+          if (!res.status) {
+            errorBox.innerText = res.message;
+            errorBox.classList.remove('hidden');
+            return;
+          }
+
+          localStorage.setItem(SESSION_KEY, JSON.stringify({
+            status: true,
+            idPembina: res.idPembina,
+            nama: res.nama,
+            username: res.username
+          }));
+          applySession(res);
+        })
+        .withFailureHandler(() => {
+          setBusy(btn, false, '<span>Masuk</span><i class="fa-solid fa-arrow-right-to-bracket"></i>');
+          errorBox.innerText = 'Koneksi ke server terputus. Muat ulang halaman.';
+          errorBox.classList.remove('hidden');
+        })
+        .loginUser(document.getElementById('loginUsername').value, document.getElementById('loginPassword').value);
+    }
+
+    function logout() {
+      session = { status: false, idPembina: null, nama: null };
+      dataSiswa = [];
+      lastRekap = { rekap: [], totalPertemuan: 0 };
+      localStorage.removeItem(SESSION_KEY);
+      document.getElementById('main-app').classList.add('hidden');
+      document.getElementById('page-login').classList.add('active');
+      document.getElementById('loginUsername').value = '';
+      document.getElementById('loginPassword').value = '';
+    }
+
+    function restoreSession() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+        if (!saved || !saved.status || !saved.idPembina || !saved.nama) return;
+        applySession(saved);
+      } catch (e) {
+        localStorage.removeItem(SESSION_KEY);
+      }
+    }
+
+    function applySession(data) {
+      session = {
+        status: true,
+        idPembina: data.idPembina,
+        nama: data.nama,
+        username: data.username || ''
+      };
+      document.getElementById('headerName').innerText = 'Halo, ' + session.nama + '!';
+      document.getElementById('sidebarName').innerText = session.nama;
+      document.getElementById('sidebarId').innerText = session.idPembina;
+      document.getElementById('printPembina').innerText = 'Pembina: ' + session.nama + ' (' + session.idPembina + ')';
+      document.getElementById('printNamaPembina').innerText = session.nama;
+      document.getElementById('printTanggal').innerText = formatTanggalIndonesia(new Date());
+      document.getElementById('page-login').classList.remove('active');
+      document.getElementById('main-app').classList.remove('hidden');
+      switchView('dashboard');
+      refreshAll();
+    }
+
+    function openProfil() {
+      document.getElementById('profilNama').value = session.nama || '';
+      document.getElementById('profilUsername').value = session.username || '';
+      document.getElementById('profilPassword').value = '';
+      document.getElementById('modalProfil').classList.add('active');
+    }
+
+    function closeProfil() {
+      document.getElementById('modalProfil').classList.remove('active');
+    }
+
+    function handleUpdateProfil(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnUpdateProfil');
+      const original = btn.innerHTML;
+      const payload = {
+        idPembina: session.idPembina,
+        nama: document.getElementById('profilNama').value.trim(),
+        username: document.getElementById('profilUsername').value.trim(),
+        password: document.getElementById('profilPassword').value.trim()
+      };
+
+      setBusy(btn, true, '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...');
+      google.script.run
+        .withSuccessHandler(res => {
+          setBusy(btn, false, original);
+          if (!res.status) return showToast('Gagal memperbarui profil', res.message, 'error');
+          localStorage.setItem(SESSION_KEY, JSON.stringify({
+            status: true,
+            idPembina: res.idPembina,
+            nama: res.nama,
+            username: res.username
+          }));
+          closeProfil();
+          applySession(res);
+          showToast('Profil diperbarui', res.message, 'success');
+        })
+        .withFailureHandler(() => {
+          setBusy(btn, false, original);
+          showToast('Gagal memperbarui profil', 'Server tidak merespons.', 'error');
+        })
+        .updateProfilPembina(payload);
+    }
+
+    function switchView(viewName) {
+      document.querySelectorAll('main .page-view').forEach(el => el.classList.remove('active'));
+      document.getElementById('page-' + viewName).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+      document.getElementById('nav-' + viewName).classList.add('active');
+
+      const titles = {
+        dashboard: ['Dashboard', 'Ringkasan kegiatan dan kesiapan data eskul Pramuka.'],
+        siswa: ['Anggota', 'Kelola siswa binaan dan pembagian sangga.'],
+        presensi: ['Presensi', 'Catat kehadiran latihan mingguan.'],
+        nilai: ['Nilai Karakter', 'Input nilai aspek sikap dan keterampilan.'],
+        rekap: ['Rekap Akhir', 'Cetak hasil akhir penilaian anggota.']
+      };
+
+      document.getElementById('headerEyebrow').innerText = titles[viewName][0];
+      document.getElementById('headerPageTitle').innerText = titles[viewName][1];
+
+      if (viewName === 'presensi') {
+        renderTablePresensi();
+        loadPresensiTanggal();
+      }
+      if (viewName === 'nilai') loadNilaiSangga();
+      if (viewName === 'rekap') loadDataRekap();
+      if (viewName === 'dashboard') renderDashboard();
+    }
+
+    function refreshAll() {
+      loadDataSiswa(() => loadDataRekap(true));
+    }
+
+    function loadDataSiswa(afterLoad) {
+      const tbody = document.getElementById('tableSiswaBody');
+      tbody.innerHTML = loadingRow(4, 'Memuat data anggota...');
+
+      google.script.run
+        .withSuccessHandler(res => {
+          dataSiswa = Array.isArray(res) ? res : [];
+          presensiDraft = {};
+          dataSiswa.forEach(s => presensiDraft[String(s.nis)] = 'H');
+          pagination.siswa = clampPage(pagination.siswa, dataSiswa.length);
+          pagination.presensi = clampPage(pagination.presensi, dataSiswa.length);
+          renderTableSiswa();
+          renderSanggaFilters();
+          renderTablePresensi();
+          renderNilaiTable();
+          renderDashboard();
+          if (document.getElementById('page-presensi').classList.contains('active')) {
+            loadPresensiTanggal();
+          }
+          if (document.getElementById('page-nilai').classList.contains('active')) {
+            loadNilaiSangga();
+          }
+          if (typeof afterLoad === 'function') afterLoad();
+        })
+        .withFailureHandler(() => {
+          tbody.innerHTML = emptyRow(4, 'Data anggota belum bisa dimuat.');
+          showToast('Gagal memuat anggota', 'Periksa koneksi atau akses spreadsheet.', 'error');
+        })
+        .getSiswaByPembina(session.idPembina);
+    }
+
+    function renderTableSiswa() {
+      const tbody = document.getElementById('tableSiswaBody');
+      const keyword = (document.getElementById('searchSiswa')?.value || '').toLowerCase().trim();
+      const filtered = dataSiswa.filter(s => [s.nis, s.nama, s.sangga].join(' ').toLowerCase().includes(keyword));
+      pagination.siswa = clampPage(pagination.siswa, filtered.length);
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = emptyRow(4, dataSiswa.length ? 'Tidak ada anggota yang cocok.' : 'Belum ada anggota yang ditambahkan.');
+        renderPager('pagerSiswa', 'siswa', 0);
+        return;
+      }
+
+      const pageRows = paginateRows(filtered, pagination.siswa);
+      tbody.innerHTML = pageRows.map(s => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-4 font-medium text-slate-600">${escapeHTML(s.nis)}</td>
+          <td class="p-4">
+            <div class="flex items-center gap-3">
+              <span class="w-10 h-10 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center font-semibold">${initials(s.nama)}</span>
+              <span class="font-semibold text-slate-900">${escapeHTML(s.nama)}</span>
+            </div>
+          </td>
+          <td class="p-4"><span class="inline-flex items-center gap-2 rounded-xl bg-slate-100 text-slate-700 px-3 py-1.5 text-xs font-semibold"><i class="fa-solid fa-flag text-teal-700"></i>${escapeHTML(s.sangga)}</span></td>
+          <td class="p-4">
+            <div class="flex justify-end gap-2">
+              <button type="button" onclick="openEditSiswa('${escapeJS(s.nis)}')" class="btn-light w-10 h-10" title="Edit siswa">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button type="button" onclick="openDeleteSiswa('${escapeJS(s.nis)}')" class="w-10 h-10 rounded-xl border border-red-100 bg-red-50 text-red-600 hover:bg-red-100" title="Hapus siswa">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+      renderPager('pagerSiswa', 'siswa', filtered.length);
+    }
+
+    function renderSanggaFilters() {
+      const sanggaList = getSanggaList();
+      const targets = [
+        ['filterSanggaPresensi', 'Semua Sangga'],
+        ['filterSanggaNilai', 'Semua Sangga'],
+        ['filterSanggaRekap', 'Semua Sangga']
+      ];
+
+      targets.forEach(([id, label]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const current = el.value;
+        el.innerHTML = `<option value="">${label}</option>` + sanggaList.map(s => `<option value="${escapeAttr(s)}">${escapeHTML(s)}</option>`).join('');
+        if (sanggaList.includes(current)) el.value = current;
+      });
+    }
+
+    function getSanggaList() {
+      return [...new Set(dataSiswa.map(s => String(s.sangga || '').trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, 'id'));
+    }
+
+    function getFilteredPresensiSiswa() {
+      const sangga = document.getElementById('filterSanggaPresensi')?.value || '';
+      const keyword = (document.getElementById('searchPresensi')?.value || '').toLowerCase().trim();
+      return dataSiswa.filter(s => {
+        const matchSangga = !sangga || String(s.sangga) === sangga;
+        const matchSearch = !keyword || [s.nis, s.nama, s.sangga].join(' ').toLowerCase().includes(keyword);
+        return matchSangga && matchSearch;
+      });
+    }
+
+    function getFilteredNilaiSiswa() {
+      const sangga = document.getElementById('filterSanggaNilai')?.value || '';
+      return dataSiswa.filter(s => !sangga || String(s.sangga) === sangga);
+    }
+
+    function getFilteredRekapRows() {
+      const sangga = document.getElementById('filterSanggaRekap')?.value || '';
+      const keyword = (document.getElementById('searchRekap')?.value || '').toLowerCase().trim();
+      return (lastRekap.rekap || []).filter(r => {
+        const matchSangga = !sangga || String(r.sangga) === sangga;
+        const matchSearch = !keyword || [r.nis, r.nama, r.sangga].join(' ').toLowerCase().includes(keyword);
+        return matchSangga && matchSearch;
+      });
+    }
+
+    function handleAddSiswa(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnAddSiswa');
+      const original = btn.innerHTML;
+      const payload = {
+        nis: document.getElementById('addNis').value.trim(),
+        nama: document.getElementById('addNama').value.trim(),
+        sangga: document.getElementById('addSangga').value.trim(),
+        idPembina: session.idPembina
+      };
+
+      setBusy(btn, true, '<i class="fa-solid fa-spinner fa-spin"></i>');
+      google.script.run
+        .withSuccessHandler(res => {
+          setBusy(btn, false, original);
+          if (!res.status) return showToast('Gagal menyimpan', res.message, 'error');
+          document.getElementById('addNis').value = '';
+          document.getElementById('addNama').value = '';
+          document.getElementById('addSangga').value = '';
+          showToast('Anggota tersimpan', 'Data anggota baru sudah masuk ke daftar.', 'success');
+          loadDataSiswa();
+        })
+        .withFailureHandler(() => {
+          setBusy(btn, false, original);
+          showToast('Gagal menyimpan', 'Server tidak merespons.', 'error');
+        })
+        .tambahSiswa(payload);
+    }
+
+    function openEditSiswa(nis) {
+      const siswa = dataSiswa.find(item => String(item.nis) === String(nis));
+      if (!siswa) return showToast('Data tidak ditemukan', 'Muat ulang data anggota lalu coba lagi.', 'error');
+
+      document.getElementById('editOldNis').value = siswa.nis;
+      document.getElementById('editNis').value = siswa.nis;
+      document.getElementById('editNama').value = siswa.nama;
+      document.getElementById('editSangga').value = siswa.sangga;
+      document.getElementById('modalEditSiswa').classList.add('active');
+    }
+
+    function closeEditSiswa() {
+      document.getElementById('modalEditSiswa').classList.remove('active');
+    }
+
+    function handleUpdateSiswa(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnUpdateSiswa');
+      const original = btn.innerHTML;
+      const payload = {
+        oldNis: document.getElementById('editOldNis').value.trim(),
+        nis: document.getElementById('editNis').value.trim(),
+        nama: document.getElementById('editNama').value.trim(),
+        sangga: document.getElementById('editSangga').value.trim(),
+        idPembina: session.idPembina
+      };
+
+      setBusy(btn, true, '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...');
+      google.script.run
+        .withSuccessHandler(res => {
+          setBusy(btn, false, original);
+          if (!res.status) return showToast('Gagal memperbarui', res.message, 'error');
+          closeEditSiswa();
+          showToast('Data diperbarui', res.message, 'success');
+          loadDataSiswa(() => loadDataRekap(true));
+        })
+        .withFailureHandler(() => {
+          setBusy(btn, false, original);
+          showToast('Gagal memperbarui', 'Server tidak merespons.', 'error');
+        })
+        .updateSiswa(payload);
+    }
+
+    function openDeleteSiswa(nis) {
+      const siswa = dataSiswa.find(item => String(item.nis) === String(nis));
+      if (!siswa) return showToast('Data tidak ditemukan', 'Muat ulang data anggota lalu coba lagi.', 'error');
+      document.getElementById('deleteNis').value = siswa.nis;
+      document.getElementById('deleteSiswaText').innerText = 'Data ' + siswa.nama + ' akan dihapus bersama presensi dan nilai yang terkait. Tindakan ini tidak dapat dibatalkan dari aplikasi.';
+      document.getElementById('modalDeleteSiswa').classList.add('active');
+    }
+
+    function closeDeleteSiswa() {
+      document.getElementById('modalDeleteSiswa').classList.remove('active');
+    }
+
+    function confirmDeleteSiswa() {
+      const nis = document.getElementById('deleteNis').value;
+      const btn = document.getElementById('btnConfirmDeleteSiswa');
+      const original = btn.innerHTML;
+
+      setBusy(btn, true, '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Menghapus...');
+      google.script.run
+        .withSuccessHandler(res => {
+          setBusy(btn, false, original);
+          if (!res.status) return showToast('Gagal menghapus', res.message, 'error');
+          closeDeleteSiswa();
+          showToast('Data dihapus', res.message, 'success');
+          loadDataSiswa(() => loadDataRekap(true));
+        })
+        .withFailureHandler(() => {
+          setBusy(btn, false, original);
+          showToast('Gagal menghapus', 'Server tidak merespons.', 'error');
+        })
+        .hapusSiswa(nis, session.idPembina);
+    }
+
+    function renderTablePresensi(skipSync) {
+      if (!skipSync) syncPresensiDraftFromDOM();
+      const tbody = document.getElementById('tablePresensiBody');
+      if (!tbody) return;
+      const filtered = getFilteredPresensiSiswa();
+      if (filtered.length === 0) {
+        tbody.innerHTML = emptyRow(5, dataSiswa.length ? 'Tidak ada anggota yang cocok dengan filter.' : 'Tambahkan anggota terlebih dahulu di menu Anggota.');
+        renderPager('pagerPresensi', 'presensi', 0);
+        return;
+      }
+
+      pagination.presensi = clampPage(pagination.presensi, filtered.length);
+      const startIndex = (pagination.presensi - 1) * PAGE_SIZE;
+      const pageRows = filtered.slice(startIndex, startIndex + PAGE_SIZE);
+
+      tbody.innerHTML = pageRows.map(s => {
+        const index = dataSiswa.findIndex(item => String(item.nis) === String(s.nis));
+        const checkedStatus = presensiDraft[String(s.nis)] || 'H';
+        return `
+        <tr class="hover:bg-slate-50">
+          <td class="p-4">
+            <p class="font-extrabold text-slate-900">${escapeHTML(s.nama)}</p>
+            <p class="text-xs text-slate-500 font-semibold mt-1">${escapeHTML(s.nis)} - Sangga ${escapeHTML(s.sangga)}</p>
+          </td>
+          ${statusCell(index, 'H', checkedStatus === 'H')}
+          ${statusCell(index, 'I', checkedStatus === 'I')}
+          ${statusCell(index, 'S', checkedStatus === 'S')}
+          ${statusCell(index, 'A', checkedStatus === 'A')}
+        </tr>
+      `;
+      }).join('');
+      renderPager('pagerPresensi', 'presensi', filtered.length);
+    }
+
+    function loadPresensiTanggal() {
+      if (!session.status || dataSiswa.length === 0) return;
+      const tanggal = document.getElementById('tglPresensi').value;
+      if (!tanggal) return;
+      const statusEl = document.getElementById('presensiStatus');
+      const loadText = document.getElementById('presensiLoadText');
+      statusEl.classList.add('hidden');
+      if (loadText) loadText.innerText = 'Mengecek ' + dataSiswa.length + ' anggota pada tanggal latihan ini.';
+
+      setPresensiLoading(true);
+      google.script.run
+        .withSuccessHandler(res => {
+          setPresensiLoading(false);
+          if (!res.status) return showToast('Presensi belum dimuat', res.message, 'error');
+          const presensi = res.presensi || {};
+          let loaded = 0;
+
+          dataSiswa.forEach((s, index) => {
+            const status = presensi[String(s.nis)] || 'H';
+            presensiDraft[String(s.nis)] = status;
+            const input = document.querySelector(`input[name="pres_${index}"][value="${status}"]`);
+            if (input) {
+              input.checked = true;
+              if (presensi[String(s.nis)]) loaded++;
+            }
+          });
+
+          if (loaded > 0) {
+            setPresensiStatus(loaded + ' data presensi tanggal ini berhasil dimuat ke form.', 'success');
+          } else {
+            setPresensiStatus('Belum ada presensi pada tanggal ini. Form siap untuk input baru.', 'neutral');
+          }
+        })
+        .withFailureHandler(() => {
+          setPresensiLoading(false);
+          showToast('Presensi belum dimuat', 'Server tidak merespons.', 'error');
+        })
+        .getPresensiByTanggal(tanggal, session.idPembina);
+    }
+
+    function setPresensiLoading(isLoading) {
+      const indicator = document.getElementById('presensiLoading');
+      const table = document.getElementById('tablePresensiBody');
+      const submit = document.getElementById('btnSimpanPresensi');
+      if (indicator) indicator.classList.toggle('active', isLoading);
+      if (table) table.classList.toggle('nilai-skeleton', isLoading);
+      if (submit) submit.disabled = isLoading;
+    }
+
+    function setPresensiStatus(message, type) {
+      const statusEl = document.getElementById('presensiStatus');
+      statusEl.innerText = message;
+      statusEl.className = 'mt-3 text-xs font-semibold ' + (type === 'success' ? 'text-teal-700' : 'text-slate-500');
+    }
+
+    function syncPresensiDraftFromDOM() {
+      if (!Array.isArray(dataSiswa) || dataSiswa.length === 0) return;
+      dataSiswa.forEach((s, index) => {
+        const checked = document.querySelector(`input[name="pres_${index}"]:checked`);
+        if (checked) presensiDraft[String(s.nis)] = checked.value;
+      });
+    }
+
+    function setBulkPresensi(status) {
+      const targetRows = getFilteredPresensiSiswa();
+      if (targetRows.length === 0) return showToast('Tidak ada anggota', 'Filter saat ini tidak memiliki anggota.', 'error');
+      targetRows.forEach(s => presensiDraft[String(s.nis)] = status);
+      renderTablePresensi(true);
+      setPresensiStatus(targetRows.length + ' anggota pada filter aktif ditandai ' + status + '.', 'success');
+    }
+
+    function handleSimpanPresensi(e) {
+      e.preventDefault();
+      if (dataSiswa.length === 0) return showToast('Presensi kosong', 'Tambahkan anggota terlebih dahulu.', 'error');
+      const tanggal = document.getElementById('tglPresensi').value;
+      if (!tanggal) return showToast('Tanggal wajib diisi', 'Pilih tanggal latihan sebelum menyimpan.', 'error');
+
+      const btn = document.getElementById('btnSimpanPresensi');
+      const original = btn.innerHTML;
+      syncPresensiDraftFromDOM();
+      const presensiList = dataSiswa.map((s, index) => ({
+        nis: s.nis,
+        status: presensiDraft[String(s.nis)] || document.querySelector(`input[name="pres_${index}"]:checked`)?.value || 'H'
+      }));
+
+      setBusy(btn, true, '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...');
+      google.script.run
+        .withSuccessHandler(res => {
+          setBusy(btn, false, original);
+          if (!res.status) return showToast('Gagal menyimpan presensi', res.message, 'error');
+          showToast('Presensi tersimpan', res.message, 'success');
+          loadDataRekap(true);
+        })
+        .withFailureHandler(() => {
+          setBusy(btn, false, original);
+          showToast('Gagal menyimpan presensi', 'Server tidak merespons.', 'error');
+        })
+        .simpanPresensi(tanggal, presensiList, session.idPembina);
+    }
+
+    function getFilteredNilaiRows() {
+      const rows = getFilteredNilaiSiswa();
+      const keyword = (document.getElementById('searchNilai')?.value || '').toLowerCase().trim();
+      return rows.filter(s => !keyword || [s.nis, s.nama, s.sangga].join(' ').toLowerCase().includes(keyword));
+    }
+
+    function loadNilaiSangga() {
+      const rows = getFilteredNilaiSiswa();
+      nilaiDraft = {};
+      renderNilaiTable();
+      if (rows.length === 0) return;
+
+      const loadText = document.getElementById('nilaiLoadText');
+      if (loadText) loadText.innerText = 'Memuat nilai ' + rows.length + ' anggota pada sangga aktif.';
+      setNilaiLoading(true);
+      google.script.run
+        .withSuccessHandler(res => {
+          setNilaiLoading(false);
+          if (!res.status) return showToast('Nilai belum dimuat', res.message, 'error');
+          nilaiDraft = res.nilai || {};
+          renderNilaiTable();
+          document.getElementById('nilaiInfo').innerText = rows.length + ' anggota siap dinilai pada filter aktif.';
+        })
+        .withFailureHandler(() => {
+          setNilaiLoading(false);
+          showToast('Nilai belum dimuat', 'Server tidak merespons.', 'error');
+        })
+        .getNilaiByNisList(rows.map(s => s.nis));
+    }
+
+    function renderNilaiTable() {
+      const tbody = document.getElementById('tableNilaiBody');
+      if (!tbody) return;
+      const rows = getFilteredNilaiRows();
+      if (rows.length === 0) {
+        tbody.innerHTML = emptyRow(9, dataSiswa.length ? 'Tidak ada anggota yang cocok dengan filter.' : 'Tambahkan anggota terlebih dahulu.');
+        document.getElementById('nilaiInfo').innerText = '';
+        return;
+      }
+
+      tbody.innerHTML = rows.map(s => {
+        const nilai = nilaiDraft[String(s.nis)] || {};
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3">
+              <p class="font-bold text-slate-900">${escapeHTML(s.nama)}</p>
+              <p class="text-[11px] text-slate-500 font-semibold">${escapeHTML(s.nis)} - ${escapeHTML(s.sangga)}</p>
+            </td>
+            ${aspekNilai.map(item => nilaiInputCell(s.nis, item.id, nilai[item.id])).join('')}
+          </tr>
+        `;
+      }).join('');
+      document.getElementById('nilaiInfo').innerText = 'Menampilkan ' + rows.length + ' anggota. Gunakan filter Sangga agar input lebih ringan.';
+    }
+
+    function nilaiInputCell(nis, key, value) {
+      return `
+        <td class="p-2 text-center">
+          <input type="number" min="0" max="100" value="${escapeAttr(value ?? '')}" data-nis="${escapeAttr(nis)}" data-key="${key}" class="input nilai-cell text-center font-semibold" placeholder="0">
+        </td>
+      `;
+    }
+
+    function setNilaiLoading(isLoading) {
+      const indicator = document.getElementById('nilaiLoading');
+      const table = document.getElementById('tableNilaiBody');
+      const submit = document.getElementById('btnSimpanNilai');
+      if (indicator) indicator.classList.toggle('active', isLoading);
+      if (table) table.classList.toggle('nilai-skeleton', isLoading);
+      document.querySelectorAll('.nilai-cell').forEach(input => input.disabled = isLoading);
+      if (submit) submit.disabled = isLoading;
+    }
+
+    function handleSimpanNilaiBatch(e) {
+      e.preventDefault();
+      const rows = getFilteredNilaiRows();
+      if (rows.length === 0) return showToast('Tidak ada anggota', 'Filter saat ini tidak memiliki anggota untuk dinilai.', 'error');
+
+      const payloadMap = {};
+      rows.forEach(s => {
+        payloadMap[String(s.nis)] = { nis: s.nis };
+        aspekNilai.forEach(item => payloadMap[String(s.nis)][item.id] = '');
+      });
+
+      document.querySelectorAll('.nilai-cell').forEach(input => {
+        const nis = input.dataset.nis;
+        const key = input.dataset.key;
+        if (payloadMap[nis]) payloadMap[nis][key] = input.value;
+      });
+
+      const payload = Object.values(payloadMap);
+      const btn = document.getElementById('btnSimpanNilai');
+      const original = btn.innerHTML;
+      setBusy(btn, true, '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...');
+
+      google.script.run
+        .withSuccessHandler(res => {
+          setBusy(btn, false, original);
+          if (!res.status) return showToast('Gagal menyimpan nilai', res.message, 'error');
+          showToast('Nilai tersimpan', res.message, 'success');
+          loadDataRekap(true);
+          loadNilaiSangga();
+        })
+        .withFailureHandler(() => {
+          setBusy(btn, false, original);
+          showToast('Gagal menyimpan nilai', 'Server tidak merespons.', 'error');
+        })
+        .simpanNilaiBatch(payload);
+    }
+
+    function loadDataRekap(silent) {
+      const tbody = document.getElementById('tableRekapBody');
+      const errorBox = document.getElementById('rekapError');
+      errorBox.classList.add('hidden');
+      if (!silent) tbody.innerHTML = loadingRow(16, 'Mengkalkulasi nilai...');
+
+      google.script.run
+        .withSuccessHandler(res => {
+          if (!res.status) {
+            errorBox.innerText = res.message;
+            errorBox.classList.remove('hidden');
+            tbody.innerHTML = '';
+            return;
+          }
+
+          lastRekap = res;
+          pagination.rekap = clampPage(pagination.rekap, (res.rekap || []).length);
+          document.getElementById('infoRekap').innerText = `Total Latihan Terekam: ${res.totalPertemuan} Kali`;
+          renderRekapTable();
+          renderDashboard();
+        })
+        .withFailureHandler(() => {
+          if (!silent) tbody.innerHTML = emptyRow(16, 'Data rekap belum bisa dimuat.');
+          showToast('Gagal memuat rekap', 'Server tidak merespons.', 'error');
+        })
+        .getRekapData(session.idPembina);
+    }
+
+    function renderRekapTable() {
+      const tbody = document.getElementById('tableRekapBody');
+      const rows = getFilteredRekapRows();
+      updatePrintFilterLabel();
+      if (rows.length === 0) {
+        tbody.innerHTML = emptyRow(16, (lastRekap.rekap || []).length ? 'Tidak ada data rekap yang cocok dengan filter.' : 'Belum ada data rekapitulasi.');
+        renderPager('pagerRekap', 'rekap', 0);
+        return;
+      }
+
+      pagination.rekap = clampPage(pagination.rekap, rows.length);
+      const startIndex = (pagination.rekap - 1) * PAGE_SIZE;
+      const pageRows = rows.slice(startIndex, startIndex + PAGE_SIZE);
+
+      tbody.innerHTML = pageRows.map((r, localIndex) => renderRekapRow(r, startIndex + localIndex)).join('');
+      renderPager('pagerRekap', 'rekap', rows.length);
+    }
+
+    function renderRekapRow(r, index) {
+      const score = Number(r.skorAkhir);
+      let scoreClass = 'bg-teal-50 text-teal-700';
+      if (score < 70) scoreClass = 'bg-red-50 text-red-700';
+      if (score >= 90) scoreClass = 'bg-emerald-50 text-emerald-700';
+      return `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3 rekap-num text-slate-400 font-semibold">${index + 1}</td>
+          <td class="p-3">
+            <p class="font-extrabold text-slate-900">${escapeHTML(r.nama)}</p>
+            <p class="text-[11px] text-slate-500 font-semibold">${escapeHTML(r.nis)} - ${escapeHTML(r.sangga)}</p>
+          </td>
+          <td class="p-2 rekap-num font-bold text-teal-700">${r.presensi.h}</td>
+          <td class="p-2 rekap-num font-bold text-amber-700">${r.presensi.i}</td>
+          <td class="p-2 rekap-num font-bold text-red-700">${r.presensi.s}</td>
+          <td class="p-2 rekap-num font-bold text-slate-500">${r.presensi.a}</td>
+          <td class="p-3 rekap-num font-extrabold text-teal-700">${Math.round(r.presensi.skor)}</td>
+          <td class="p-3 rekap-num">${r.nilai.n2}</td>
+          <td class="p-3 rekap-num">${r.nilai.n3}</td>
+          <td class="p-3 rekap-num">${r.nilai.n4}</td>
+          <td class="p-3 rekap-num">${r.nilai.n5}</td>
+          <td class="p-3 rekap-num">${r.nilai.n6}</td>
+          <td class="p-3 rekap-num">${r.nilai.n7}</td>
+          <td class="p-3 rekap-num font-bold text-amber-700">${r.nilai.n8}</td>
+          <td class="p-3 rekap-num">${r.nilai.n9}</td>
+          <td class="p-3 rekap-num font-extrabold ${scoreClass}">${r.skorAkhir}</td>
+        </tr>
+      `;
+    }
+
+    function printRekap() {
+      const rows = getFilteredRekapRows();
+      if (rows.length === 0) return window.print();
+      updatePrintFilterLabel();
+      const tbody = document.getElementById('tableRekapBody');
+      tbody.innerHTML = rows.map((r, index) => renderRekapRow(r, index)).join('');
+      window.print();
+      setTimeout(renderRekapTable, 250);
+    }
+
+    function updatePrintFilterLabel() {
+      const sangga = document.getElementById('filterSanggaRekap')?.value || '';
+      const keyword = (document.getElementById('searchRekap')?.value || '').trim();
+      const parts = [];
+      parts.push(sangga ? 'Sangga ' + sangga : 'Semua Sangga');
+      if (keyword) parts.push('Pencarian "' + keyword + '"');
+      document.getElementById('printFilter').innerText = 'Cakupan: ' + parts.join(' - ');
+    }
+
+    function renderDashboard() {
+      document.getElementById('statSiswa').innerText = dataSiswa.length;
+      document.getElementById('statPertemuan').innerText = lastRekap.totalPertemuan || 0;
+      const sanggaCount = new Set(dataSiswa.map(s => String(s.sangga || '').trim()).filter(Boolean)).size;
+      document.getElementById('statSangga').innerText = sanggaCount;
+
+      const scores = (lastRekap.rekap || []).map(r => Number(r.skorAkhir)).filter(n => !isNaN(n));
+      const rata = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : '0';
+      document.getElementById('statRata').innerText = rata;
+
+      const list = document.getElementById('dashboardSiswaList');
+      const latest = dataSiswa.slice(-5).reverse();
+      if (latest.length === 0) {
+        list.innerHTML = '<div class="rounded-2xl bg-slate-50 border border-slate-200 p-5 text-sm text-slate-500">Belum ada anggota. Mulai dari menu Anggota.</div>';
+        return;
+      }
+      list.innerHTML = latest.map(s => `
+        <div class="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 p-4">
+          <div class="flex items-center gap-3 min-w-0">
+            <span class="w-10 h-10 shrink-0 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center font-extrabold">${initials(s.nama)}</span>
+            <div class="min-w-0">
+              <p class="font-extrabold text-slate-900 truncate">${escapeHTML(s.nama)}</p>
+              <p class="text-xs font-semibold text-slate-500">${escapeHTML(s.nis)}</p>
+            </div>
+          </div>
+          <span class="shrink-0 rounded-xl bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">${escapeHTML(s.sangga)}</span>
+        </div>
+      `).join('');
+    }
+
+    function statusCell(index, status, checked) {
+      return `
+        <td class="p-4 text-center">
+          <label class="status-radio">
+            <input type="radio" name="pres_${index}" value="${status}" ${checked ? 'checked' : ''} onchange="syncPresensiDraftFromDOM()">
+            <span>${status}</span>
+          </label>
+        </td>
+      `;
+    }
+
+    function paginateRows(rows, page) {
+      const start = (page - 1) * PAGE_SIZE;
+      return rows.slice(start, start + PAGE_SIZE);
+    }
+
+    function getTotalPages(totalRows) {
+      return Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+    }
+
+    function clampPage(page, totalRows) {
+      return Math.min(Math.max(1, page), getTotalPages(totalRows));
+    }
+
+    function changePage(key, direction) {
+      if (key === 'presensi') syncPresensiDraftFromDOM();
+      const totalRows = key === 'siswa'
+        ? dataSiswa.filter(s => [s.nis, s.nama, s.sangga].join(' ').toLowerCase().includes((document.getElementById('searchSiswa')?.value || '').toLowerCase().trim())).length
+        : key === 'presensi'
+          ? getFilteredPresensiSiswa().length
+          : getFilteredRekapRows().length;
+
+      pagination[key] = clampPage(pagination[key] + direction, totalRows);
+      if (key === 'siswa') renderTableSiswa();
+      if (key === 'presensi') renderTablePresensi();
+      if (key === 'rekap') renderRekapTable();
+    }
+
+    function renderPager(containerId, key, totalRows) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      if (totalRows <= PAGE_SIZE) {
+        el.innerHTML = totalRows > 0 ? `<span>Menampilkan ${totalRows} data</span>` : '';
+        return;
+      }
+
+      const totalPages = getTotalPages(totalRows);
+      const page = clampPage(pagination[key], totalRows);
+      const start = ((page - 1) * PAGE_SIZE) + 1;
+      const end = Math.min(page * PAGE_SIZE, totalRows);
+      el.innerHTML = `
+        <span>Menampilkan ${start}-${end} dari ${totalRows} data</span>
+        <div class="pager-actions">
+          <button type="button" onclick="changePage('${key}', -1)" ${page <= 1 ? 'disabled' : ''} aria-label="Halaman sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
+          <span>Halaman ${page} / ${totalPages}</span>
+          <button type="button" onclick="changePage('${key}', 1)" ${page >= totalPages ? 'disabled' : ''} aria-label="Halaman berikutnya"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+      `;
+    }
+
+    function setBusy(button, busy, html) {
+      button.innerHTML = html;
+      button.disabled = busy;
+    }
+
+    function showToast(title, message, type) {
+      const toast = document.getElementById('toast');
+      const icon = document.getElementById('toastIcon');
+      document.getElementById('toastTitle').innerText = title;
+      document.getElementById('toastMessage').innerText = message || '';
+      icon.className = 'w-10 h-10 rounded-xl flex items-center justify-center ' + (type === 'error' ? 'bg-red-50 text-red-700' : 'bg-teal-50 text-teal-700');
+      icon.innerHTML = type === 'error' ? '<i class="fa-solid fa-triangle-exclamation"></i>' : '<i class="fa-solid fa-check"></i>';
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 3600);
+    }
+
+    function loadingRow(colspan, text) {
+      return `<tr><td colspan="${colspan}" class="p-6 text-center text-slate-500"><i class="fa-solid fa-spinner fa-spin mr-2"></i>${text}</td></tr>`;
+    }
+
+    function emptyRow(colspan, text) {
+      return `<tr><td colspan="${colspan}" class="p-6 text-center text-slate-500">${text}</td></tr>`;
+    }
+
+    function initials(value) {
+      const words = String(value || '').trim().split(/\s+/).filter(Boolean);
+      return words.slice(0, 2).map(w => w[0].toUpperCase()).join('') || 'P';
+    }
+
+    function escapeHTML(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function escapeAttr(value) {
+      return escapeHTML(value).replace(/`/g, '&#096;');
+    }
+
+    function escapeJS(value) {
+      return String(value ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r');
+    }
+
+    function formatTanggalIndonesia(date) {
+      const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+      return date.getDate() + ' ' + bulan[date.getMonth()] + ' ' + date.getFullYear();
+    }
+
+  </script>
+</body>
+</html>
