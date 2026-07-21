@@ -434,15 +434,46 @@ function simpanNilaiBatch(nilaiList) {
       return { status: false, message: 'Tidak ada data nilai untuk disimpan.' };
     }
 
-    const results = [];
-    for (let i = 0; i < nilaiList.length; i++) {
-      const res = simpanNilai(nilaiList[i]);
-      if (!res.status) {
-        return { status: false, message: 'Baris ' + (i + 1) + ': ' + res.message };
-      }
-      results.push(res);
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Nilai');
+    const allData = sheet.getDataRange().getValues();
+    const aspek = ['n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9'];
+    const rowByNis = {};
+
+    for (let i = 1; i < allData.length; i++) {
+      rowByNis[String(allData[i][0])] = i;
     }
 
+    for (let i = 0; i < nilaiList.length; i++) {
+      const dataNilai = nilaiList[i] || {};
+      if (!dataNilai.nis) {
+        return { status: false, message: 'Baris ' + (i + 1) + ': NIS siswa tidak ditemukan.' };
+      }
+
+      const nilaiBersih = {};
+      for (let j = 0; j < aspek.length; j++) {
+        const key = aspek[j];
+        const rawNilai = dataNilai[key] === '' || dataNilai[key] === null || typeof dataNilai[key] === 'undefined' ? 0 : dataNilai[key];
+        const nilai = Number(rawNilai);
+        if (isNaN(nilai) || nilai < 0 || nilai > 100) {
+          return { status: false, message: 'Baris ' + (i + 1) + ': Nilai ' + key.toUpperCase() + ' harus berada pada rentang 0 sampai 100.' };
+        }
+        nilaiBersih[key] = nilai;
+      }
+
+      const rowData = [
+        dataNilai.nis, nilaiBersih.n2, nilaiBersih.n3, nilaiBersih.n4,
+        nilaiBersih.n5, nilaiBersih.n6, nilaiBersih.n7, nilaiBersih.n8, nilaiBersih.n9
+      ];
+      const existingIndex = rowByNis[String(dataNilai.nis)];
+      if (typeof existingIndex === 'number') {
+        allData[existingIndex] = rowData;
+      } else {
+        rowByNis[String(dataNilai.nis)] = allData.length;
+        allData.push(rowData);
+      }
+    }
+
+    sheet.getRange(1, 1, allData.length, 9).setValues(allData);
     return { status: true, message: nilaiList.length + ' data nilai berhasil disimpan.' };
   } catch (e) {
     return { status: false, message: e.message };

@@ -1867,19 +1867,31 @@
       const original = btn.innerHTML;
       setBusy(btn, true, '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...');
 
-      google.script.run
-        .withSuccessHandler(res => {
+      // JSONP memakai GET, jadi data besar dipecah agar URL tetap aman untuk 200+ anggota.
+      const batchSize = 20;
+      const batches = [];
+      for (let i = 0; i < payload.length; i += batchSize) {
+        batches.push(payload.slice(i, i + batchSize));
+      }
+
+      (async () => {
+        try {
+          let saved = 0;
+          for (let i = 0; i < batches.length; i++) {
+            setBusy(btn, true, `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan ${i + 1}/${batches.length}...`);
+            const res = await apiCall('simpanNilaiBatch', [batches[i]]);
+            if (!res || !res.status) throw new Error((res && res.message) || 'Data nilai tidak berhasil disimpan.');
+            saved += batches[i].length;
+          }
           setBusy(btn, false, original);
-          if (!res.status) return showToast('Gagal menyimpan nilai', res.message, 'error');
-          showToast('Nilai tersimpan', res.message, 'success');
+          showToast('Nilai tersimpan', saved + ' data nilai berhasil disimpan.', 'success');
           loadDataRekap(true);
           loadNilaiSangga();
-        })
-        .withFailureHandler(() => {
+        } catch (error) {
           setBusy(btn, false, original);
-          showToast('Gagal menyimpan nilai', 'Server tidak merespons.', 'error');
-        })
-        .simpanNilaiBatch(payload);
+          showToast('Gagal menyimpan nilai', error.message || 'Server tidak merespons.', 'error');
+        }
+      })();
     }
 
     function loadDataRekap(silent) {
