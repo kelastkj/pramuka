@@ -327,18 +327,22 @@ function simpanPresensi(tanggal, presensiList, idPembina) {
       return { status: false, message: 'Tanggal latihan wajib diisi.' };
     }
 
-    const lastRow = sheet.getLastRow();
-    const data = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 4).getValues() : [];
+    if (!Array.isArray(presensiList) || presensiList.length === 0) {
+      return { status: false, message: 'Tidak ada data presensi untuk disimpan.' };
+    }
+
+    const allData = sheet.getDataRange().getValues();
     const rowMap = {};
 
-    data.forEach((row, index) => {
+    for (let index = 1; index < allData.length; index++) {
+      const row = allData[index];
       const key = [
         normalizeDateKey(row[0]),
         String(row[1]).trim(),
         String(row[3]).trim()
       ].join('|');
-      rowMap[key] = index + 2;
-    });
+      rowMap[key] = index;
+    }
 
     presensiList.forEach(p => {
       const rowData = [tanggal, p.nis, p.status, idPembina];
@@ -348,13 +352,16 @@ function simpanPresensi(tanggal, presensiList, idPembina) {
         String(idPembina).trim()
       ].join('|');
 
-      if (rowMap[key]) {
-        sheet.getRange(rowMap[key], 1, 1, 4).setValues([rowData]);
+      if (typeof rowMap[key] === 'number') {
+        allData[rowMap[key]] = rowData;
       } else {
-        sheet.appendRow(rowData);
+        rowMap[key] = allData.length;
+        allData.push(rowData);
       }
     });
-    return { status: true, message: 'Presensi tanggal ' + tanggal + ' berhasil disimpan atau diperbarui.' };
+
+    sheet.getRange(1, 1, allData.length, 4).setValues(allData);
+    return { status: true, message: presensiList.length + ' data presensi tanggal ' + tanggal + ' berhasil disimpan atau diperbarui.' };
   } catch (e) {
     return { status: false, message: e.message };
   }

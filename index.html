@@ -344,6 +344,29 @@
       to { transform: translateX(100%); }
     }
 
+    .dashboard-skeleton {
+      display: inline-block;
+      width: 68px;
+      height: 34px;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #e7efe5 25%, #f8fbf6 50%, #e7efe5 75%);
+      background-size: 200% 100%;
+      animation: dashboardShimmer 1.2s infinite;
+      vertical-align: middle;
+    }
+
+    .dashboard-list-skeleton {
+      height: 68px;
+      border-radius: 16px;
+      background: linear-gradient(90deg, #f0f5ee 25%, #fbfdfb 50%, #f0f5ee 75%);
+      background-size: 200% 100%;
+      animation: dashboardShimmer 1.2s infinite;
+    }
+
+    @keyframes dashboardShimmer {
+      to { background-position: -200% 0; }
+    }
+
     .bg-teal-700, .bg-teal-600, .bg-teal-500 { background-color: var(--forest) !important; }
     .bg-slate-950 { background-color: var(--brand-strong) !important; }
     .bg-teal-50 { background-color: var(--forest-soft) !important; }
@@ -776,28 +799,28 @@
               <p class="text-sm font-bold text-slate-500">Anggota Binaan</p>
               <span class="w-10 h-10 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center"><i class="fa-solid fa-users"></i></span>
             </div>
-            <p id="statSiswa" class="text-3xl font-extrabold mt-3">0</p>
+            <p id="statSiswa" class="text-3xl font-extrabold mt-3"><span class="dashboard-skeleton" aria-label="Memuat"></span></p>
           </article>
           <article class="soft-card rounded-3xl p-4">
             <div class="flex items-center justify-between">
               <p class="text-sm font-bold text-slate-500">Latihan Terekam</p>
               <span class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center"><i class="fa-solid fa-calendar-check"></i></span>
             </div>
-            <p id="statPertemuan" class="text-3xl font-extrabold mt-3">0</p>
+            <p id="statPertemuan" class="text-3xl font-extrabold mt-3"><span class="dashboard-skeleton" aria-label="Memuat"></span></p>
           </article>
           <article class="soft-card rounded-3xl p-4">
             <div class="flex items-center justify-between">
               <p class="text-sm font-bold text-slate-500">Rata-rata Akhir</p>
               <span class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center"><i class="fa-solid fa-chart-line"></i></span>
             </div>
-            <p id="statRata" class="text-3xl font-extrabold mt-3">0</p>
+            <p id="statRata" class="text-3xl font-extrabold mt-3"><span class="dashboard-skeleton" aria-label="Memuat"></span></p>
           </article>
           <article class="soft-card rounded-3xl p-4">
             <div class="flex items-center justify-between">
               <p class="text-sm font-bold text-slate-500">Sangga Aktif</p>
               <span class="w-10 h-10 rounded-2xl bg-violet-50 text-violet-700 flex items-center justify-center"><i class="fa-solid fa-flag"></i></span>
             </div>
-            <p id="statSangga" class="text-3xl font-extrabold mt-3">0</p>
+            <p id="statSangga" class="text-3xl font-extrabold mt-3"><span class="dashboard-skeleton" aria-label="Memuat"></span></p>
           </article>
         </div>
 
@@ -810,7 +833,11 @@
               </div>
               <button onclick="switchView('siswa')" class="btn-light px-4"><i class="fa-solid fa-plus"></i></button>
             </div>
-            <div id="dashboardSiswaList" class="space-y-3"></div>
+            <div id="dashboardSiswaList" class="space-y-3">
+              <div class="dashboard-list-skeleton"></div>
+              <div class="dashboard-list-skeleton"></div>
+              <div class="dashboard-list-skeleton"></div>
+            </div>
           </article>
 
           <article class="soft-card rounded-3xl p-5">
@@ -1144,6 +1171,7 @@
     let dataSiswa = [];
     let lastRekap = { rekap: [], totalPertemuan: 0 };
     let toastTimer = null;
+    let dashboardLoading = true;
     const SESSION_KEY = 'pramukaSession';
     const PAGE_SIZE = 10;
     const pagination = {
@@ -1340,6 +1368,8 @@
       document.getElementById('printTanggal').innerText = formatTanggalIndonesia(new Date());
       document.getElementById('page-login').classList.remove('active');
       document.getElementById('main-app').classList.remove('hidden');
+      dashboardLoading = true;
+      setDashboardLoading(true);
       switchView('dashboard');
       refreshAll();
     }
@@ -1415,6 +1445,8 @@
     }
 
     function refreshAll() {
+      dashboardLoading = true;
+      setDashboardLoading(true);
       loadDataSiswa(() => loadDataRekap(true));
     }
 
@@ -1764,6 +1796,8 @@
           setBusy(btn, false, original);
           if (!res.status) return showToast('Gagal menyimpan presensi', res.message, 'error');
           showToast('Presensi tersimpan', res.message, 'success');
+          setPresensiStatus('Presensi berhasil disimpan. Memverifikasi data tersimpan...', 'success');
+          loadPresensiTanggal();
           loadDataRekap(true);
         })
         .withFailureHandler(() => {
@@ -1907,6 +1941,9 @@
             errorBox.innerText = res.message;
             errorBox.classList.remove('hidden');
             tbody.innerHTML = '';
+            dashboardLoading = false;
+            setDashboardLoading(false);
+            renderDashboard();
             return;
           }
 
@@ -1914,10 +1951,15 @@
           pagination.rekap = clampPage(pagination.rekap, (res.rekap || []).length);
           document.getElementById('infoRekap').innerText = `Total Latihan Terekam: ${res.totalPertemuan} Kali`;
           renderRekapTable();
+          dashboardLoading = false;
+          setDashboardLoading(false);
           renderDashboard();
         })
         .withFailureHandler(() => {
           if (!silent) tbody.innerHTML = emptyRow(16, 'Data rekap belum bisa dimuat.');
+          dashboardLoading = false;
+          setDashboardLoading(false);
+          renderDashboard();
           showToast('Gagal memuat rekap', 'Server tidak merespons.', 'error');
         })
         .getRekapData(session.idPembina);
@@ -1991,6 +2033,7 @@
     }
 
     function renderDashboard() {
+      if (dashboardLoading) return;
       document.getElementById('statSiswa').innerText = dataSiswa.length;
       document.getElementById('statPertemuan').innerText = lastRekap.totalPertemuan || 0;
       const sanggaCount = new Set(dataSiswa.map(s => String(s.sangga || '').trim()).filter(Boolean)).size;
@@ -2018,6 +2061,20 @@
           <span class="shrink-0 rounded-xl bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">${escapeHTML(s.sangga)}</span>
         </div>
       `).join('');
+    }
+
+    function setDashboardLoading(isLoading) {
+      const values = ['statSiswa', 'statPertemuan', 'statRata', 'statSangga'];
+      values.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (isLoading) el.innerHTML = '<span class="dashboard-skeleton" aria-label="Memuat"></span>';
+      });
+
+      const list = document.getElementById('dashboardSiswaList');
+      if (list && isLoading) {
+        list.innerHTML = '<div class="dashboard-list-skeleton"></div><div class="dashboard-list-skeleton"></div><div class="dashboard-list-skeleton"></div>';
+      }
     }
 
     function statusCell(index, status, checked) {
