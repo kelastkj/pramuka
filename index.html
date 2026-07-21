@@ -398,19 +398,19 @@
         bottom: 0 !important;
         top: auto !important;
         width: 100vw !important;
-        height: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
-        min-height: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
-        max-height: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
+        height: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+        min-height: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+        max-height: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
         overflow: visible;
         z-index: 60;
         border-radius: 0;
-        padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+        padding: 5px 4px calc(7px + env(safe-area-inset-bottom, 0px));
         border: 0;
         border-top: 1px solid rgba(216, 230, 216, .95);
-        background: rgba(255, 255, 255, .97) !important;
+        background: #ffffff !important;
         box-shadow: 0 -8px 24px rgba(32, 49, 40, .08);
-        backdrop-filter: blur(18px);
         transform: translate3d(0, 0, 0);
+        isolation: isolate;
       }
       .sidebar-brand, .sidebar-profile, .logout-label { display: none !important; }
       .mobile-logout { display: flex; }
@@ -420,22 +420,22 @@
         grid-template-columns: repeat(6, minmax(0, 1fr));
         gap: 0;
         margin-top: 0 !important;
-        height: 70px;
+        height: 72px;
         align-items: center;
         justify-items: center;
       }
       .sidebar-nav > .nav-item { margin-top: 0 !important; }
       .nav-item {
         min-width: 0;
-        min-height: 70px;
-        height: 70px;
+        min-height: 72px;
+        height: 72px;
         width: 100% !important;
         justify-content: center;
         padding: 0;
         border-radius: 0;
         box-shadow: none;
         flex-direction: column;
-        gap: 4px;
+        gap: 3px;
         background: transparent !important;
         color: #6b7280 !important;
       }
@@ -443,18 +443,18 @@
         transform: none;
       }
       .nav-icon {
-        width: 30px !important;
-        height: 30px !important;
-        border-radius: 10px !important;
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 11px !important;
         background: #f1f5f9 !important;
         color: #8190a2 !important;
         font-size: 14px;
-        flex: 0 0 30px;
+        flex: 0 0 32px;
       }
       .nav-label {
         display: block !important;
         min-width: 0;
-        font-size: 10px;
+        font-size: 10.5px;
         line-height: 1.1;
         font-weight: 700;
         color: #6b7280;
@@ -475,6 +475,10 @@
         background: var(--brand) !important;
         color: #ffffff !important;
         box-shadow: 0 5px 12px rgba(47, 111, 78, .22);
+      }
+      .mobile-logout .nav-icon {
+        background: #fbe9e5 !important;
+        color: var(--danger) !important;
       }
       .sidebar > .btn-light {
         display: none;
