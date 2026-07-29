@@ -703,6 +703,36 @@
     </div>
   </div>
 
+  <div id="modalSavingOverlay" class="modal-backdrop">
+    <div class="soft-card w-full max-w-md p-6 text-center shadow-2xl rounded-3xl border border-slate-200/80 bg-white/95 relative overflow-hidden">
+      <div class="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-teal-500 via-emerald-500 to-teal-600"></div>
+      
+      <div class="mx-auto w-16 h-16 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center mb-4 shadow-inner">
+        <i class="fa-solid fa-cloud-arrow-up text-2xl animate-bounce"></i>
+      </div>
+
+      <h3 id="savingTitle" class="text-xl font-extrabold text-slate-900">Proses Menyimpan Data</h3>
+      
+      <div class="mt-4 p-3.5 rounded-2xl bg-amber-50 border border-amber-200/70 text-amber-800 text-xs font-semibold flex items-center gap-3 text-left">
+        <i class="fa-solid fa-triangle-exclamation text-amber-600 text-lg shrink-0"></i>
+        <span>Peringatan: <strong>Jangan menutup atau memuat ulang halaman ini</strong> sampai proses selesai.</span>
+      </div>
+
+      <div class="mt-5 space-y-2">
+        <div class="flex justify-between items-center text-xs font-bold">
+          <span id="savingStatusText" class="text-slate-600">Menyiapkan pengiriman data...</span>
+          <span id="savingPercent" class="text-teal-700 font-extrabold">0%</span>
+        </div>
+
+        <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200">
+          <div id="savingProgressBar" class="h-full bg-gradient-to-r from-teal-500 to-emerald-600 rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
+        </div>
+
+        <p id="savingSubtext" class="text-[11px] text-slate-400 font-medium">Mohon tunggu sebentar, data sedang dikirim ke server...</p>
+      </div>
+    </div>
+  </div>
+
   <section id="page-login" class="page-view active login-page grid place-items-center print-hidden">
     <div class="login-card soft-card rounded-2xl overflow-hidden grid md:grid-cols-[1fr_0.95fr]">
       <div class="login-brand-panel p-7 md:p-10 text-white relative overflow-hidden">
@@ -1821,6 +1851,30 @@
       setPresensiStatus(targetRows.length + ' anggota pada filter aktif ditandai ' + status + '.', 'success');
     }
 
+    function showSavingOverlay(title, initialStatus) {
+      document.getElementById('savingTitle').innerText = title || 'Proses Menyimpan Data';
+      document.getElementById('savingStatusText').innerText = initialStatus || 'Menyiapkan pengiriman...';
+      document.getElementById('savingPercent').innerText = '0%';
+      document.getElementById('savingProgressBar').style.width = '0%';
+      document.getElementById('savingSubtext').innerText = 'Mohon tunggu sebentar, data sedang dikirim ke server...';
+      document.getElementById('modalSavingOverlay').classList.add('active');
+      window.onbeforeunload = function() {
+        return 'Proses penyimpanan data sedang berlangsung. Yakin ingin meninggalkan halaman?';
+      };
+    }
+
+    function updateSavingProgress(step, totalSteps, message) {
+      const percent = Math.min(100, Math.round((step / totalSteps) * 100));
+      document.getElementById('savingStatusText').innerText = message || `Memproses ${step}/${totalSteps}...`;
+      document.getElementById('savingPercent').innerText = percent + '%';
+      document.getElementById('savingProgressBar').style.width = percent + '%';
+    }
+
+    function hideSavingOverlay() {
+      document.getElementById('modalSavingOverlay').classList.remove('active');
+      window.onbeforeunload = null;
+    }
+
     function handleSimpanPresensi(e) {
       e.preventDefault();
       if (dataSiswa.length === 0) return showToast('Presensi kosong', 'Tambahkan anggota terlebih dahulu.', 'error');
@@ -1842,21 +1896,27 @@
         batches.push(presensiList.slice(i, i + batchSize));
       }
 
+      showSavingOverlay('Menyimpan Presensi Pertemuan', `Menyiapkan ${presensiList.length} data presensi...`);
+      setBusy(btn, true, '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...');
+
       (async () => {
         try {
           let saved = 0;
           for (let i = 0; i < batches.length; i++) {
+            updateSavingProgress(i + 1, batches.length, `Menyimpan batch ${i + 1} dari ${batches.length} (${saved + batches[i].length}/${presensiList.length} siswa)...`);
             setBusy(btn, true, `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan ${i + 1}/${batches.length}...`);
             const res = await apiCall('simpanPresensi', [tanggal, batches[i], session.idPembina]);
             if (!res || !res.status) throw new Error((res && res.message) || 'Data presensi tidak berhasil disimpan.');
             saved += batches[i].length;
           }
+          hideSavingOverlay();
           setBusy(btn, false, original);
           showToast('Presensi tersimpan', saved + ' data presensi tanggal ' + tanggal + ' berhasil disimpan.', 'success');
           setPresensiStatus('Presensi berhasil disimpan. Memverifikasi data tersimpan...', 'success');
           loadPresensiTanggal();
           loadDataRekap(true);
         } catch (error) {
+          hideSavingOverlay();
           setBusy(btn, false, original);
           showToast('Gagal menyimpan presensi', error.message || 'Server tidak merespons.', 'error');
         }
@@ -1956,7 +2016,6 @@
       const payload = Object.values(payloadMap);
       const btn = document.getElementById('btnSimpanNilai');
       const original = btn.innerHTML;
-      setBusy(btn, true, '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...');
 
       // JSONP memakai GET, jadi data besar dipecah agar URL tetap aman untuk 200+ anggota.
       const batchSize = 20;
@@ -1965,20 +2024,26 @@
         batches.push(payload.slice(i, i + batchSize));
       }
 
+      showSavingOverlay('Menyimpan Nilai Karakter', `Menyiapkan ${payload.length} data nilai...`);
+      setBusy(btn, true, '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...');
+
       (async () => {
         try {
           let saved = 0;
           for (let i = 0; i < batches.length; i++) {
+            updateSavingProgress(i + 1, batches.length, `Menyimpan batch ${i + 1} dari ${batches.length} (${saved + batches[i].length}/${payload.length} siswa)...`);
             setBusy(btn, true, `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan ${i + 1}/${batches.length}...`);
             const res = await apiCall('simpanNilaiBatch', [batches[i]]);
             if (!res || !res.status) throw new Error((res && res.message) || 'Data nilai tidak berhasil disimpan.');
             saved += batches[i].length;
           }
+          hideSavingOverlay();
           setBusy(btn, false, original);
           showToast('Nilai tersimpan', saved + ' data nilai berhasil disimpan.', 'success');
           loadDataRekap(true);
           loadNilaiSangga();
         } catch (error) {
+          hideSavingOverlay();
           setBusy(btn, false, original);
           showToast('Gagal menyimpan nilai', error.message || 'Server tidak merespons.', 'error');
         }
