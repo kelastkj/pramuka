@@ -481,14 +481,18 @@ function simpanNilaiBatch(nilaiList) {
     }
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Nilai');
-    const allData = sheet.getDataRange().getValues();
+    const lastRow = sheet.getLastRow();
+    const data = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 9).getValues() : [];
     const aspek = ['n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9'];
     const rowByNis = {};
 
-    for (let i = 1; i < allData.length; i++) {
-      rowByNis[String(allData[i][0])] = i;
+    for (let i = 0; i < data.length; i++) {
+      rowByNis[String(data[i][0]).trim()] = i + 2;
     }
 
+    const updates = {};
+    const newRows = [];
+    const pendingRows = {};
     for (let i = 0; i < nilaiList.length; i++) {
       const dataNilai = nilaiList[i] || {};
       if (!dataNilai.nis) {
@@ -510,16 +514,34 @@ function simpanNilaiBatch(nilaiList) {
         dataNilai.nis, nilaiBersih.n2, nilaiBersih.n3, nilaiBersih.n4,
         nilaiBersih.n5, nilaiBersih.n6, nilaiBersih.n7, nilaiBersih.n8, nilaiBersih.n9
       ];
-      const existingIndex = rowByNis[String(dataNilai.nis)];
-      if (typeof existingIndex === 'number') {
-        allData[existingIndex] = rowData;
+      const nisKey = String(dataNilai.nis).trim();
+      const existingRow = rowByNis[nisKey];
+      if (typeof existingRow === 'number') {
+        updates[existingRow] = rowData;
+      } else if (typeof pendingRows[nisKey] === 'number') {
+        newRows[pendingRows[nisKey]] = rowData;
       } else {
-        rowByNis[String(dataNilai.nis)] = allData.length;
-        allData.push(rowData);
+        pendingRows[nisKey] = newRows.length;
+        newRows.push(rowData);
       }
     }
 
-    sheet.getRange(1, 1, allData.length, 9).setValues(allData);
+    const updateRows = Object.keys(updates).map(Number).sort((a, b) => a - b);
+    let blockStart = 0;
+    while (blockStart < updateRows.length) {
+      let blockEnd = blockStart;
+      while (blockEnd + 1 < updateRows.length && updateRows[blockEnd + 1] === updateRows[blockEnd] + 1) {
+        blockEnd++;
+      }
+      const blockRows = updateRows.slice(blockStart, blockEnd + 1);
+      sheet.getRange(blockRows[0], 1, blockRows.length, 9).setValues(blockRows.map(rowNumber => updates[rowNumber]));
+      blockStart = blockEnd + 1;
+    }
+
+    if (newRows.length > 0) {
+      sheet.getRange(sheet.getLastRow() + 1, 1, newRows.length, 9).setValues(newRows);
+    }
+
     return { status: true, message: nilaiList.length + ' data nilai berhasil disimpan.' };
   } catch (e) {
     return { status: false, message: e.message };
