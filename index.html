@@ -1101,13 +1101,13 @@
             <div class="w-full lg:w-[30rem] grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Sangga</label>
-                <select id="filterSanggaNilai" class="input cursor-pointer" onchange="loadNilaiSangga()"></select>
+                <select id="filterSanggaNilai" class="input cursor-pointer" onchange="pagination.nilai = 1; loadNilaiSangga()"></select>
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Cari Anggota</label>
                 <div class="relative">
                   <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                  <input id="searchNilai" oninput="renderNilaiTable()" class="input pl-11" placeholder="Nama atau NIS">
+                  <input id="searchNilai" oninput="pagination.nilai = 1; renderNilaiTable()" class="input pl-11" placeholder="Nama atau NIS">
                 </div>
               </div>
             </div>
@@ -1134,9 +1134,10 @@
                 </table>
               </div>
             </div>
+            <div id="pagerNilai" class="pager"></div>
             <p id="nilaiInfo" class="text-xs text-slate-500 mt-3"></p>
             <button type="submit" id="btnSimpanNilai" class="btn-dark w-full mt-6">
-              <i class="fa-solid fa-floppy-disk"></i><span>Simpan Nilai Sangga Ini</span>
+              <i class="fa-solid fa-floppy-disk"></i><span>Simpan Nilai Ditampilkan</span>
             </button>
           </form>
         </article>
@@ -1252,6 +1253,7 @@
     const pagination = {
       siswa: 1,
       presensi: 1,
+      nilai: 1,
       rekap: 1
     };
     let presensiDraft = {};
@@ -1665,7 +1667,12 @@
 
     function getFilteredNilaiSiswa() {
       const sangga = document.getElementById('filterSanggaNilai')?.value || '';
-      return dataSiswa.filter(s => !sangga || String(s.sangga) === sangga);
+      const keyword = (document.getElementById('searchNilai')?.value || '').toLowerCase().trim();
+      return dataSiswa.filter(s => {
+        const matchSangga = !sangga || String(s.sangga) === sangga;
+        const matchSearch = !keyword || [s.nis, s.nama, s.sangga].join(' ').toLowerCase().includes(keyword);
+        return matchSangga && matchSearch;
+      });
     }
 
     function getFilteredRekapRows() {
@@ -1961,14 +1968,11 @@
     }
 
     function getFilteredNilaiRows() {
-      const rows = getFilteredNilaiSiswa();
-      const keyword = (document.getElementById('searchNilai')?.value || '').toLowerCase().trim();
-      return rows.filter(s => !keyword || [s.nis, s.nama, s.sangga].join(' ').toLowerCase().includes(keyword));
+      return getFilteredNilaiSiswa();
     }
 
     function loadNilaiSangga() {
       const rows = getFilteredNilaiSiswa();
-      nilaiDraft = {};
       renderNilaiTable();
       if (rows.length === 0) return;
 
@@ -1980,6 +1984,7 @@
           setNilaiLoading(false);
           if (!res.status) return showToast('Nilai belum dimuat', res.message, 'error');
           nilaiDraft = res.nilai || {};
+          pagination.nilai = clampPage(pagination.nilai, rows.length);
           renderNilaiTable();
           document.getElementById('nilaiInfo').innerText = rows.length + ' anggota siap dinilai pada filter aktif.';
         })
@@ -1996,11 +2001,15 @@
       const rows = getFilteredNilaiRows();
       if (rows.length === 0) {
         tbody.innerHTML = emptyRow(9, dataSiswa.length ? 'Tidak ada anggota yang cocok dengan filter.' : 'Tambahkan anggota terlebih dahulu.');
+        renderPager('pagerNilai', 'nilai', 0);
         document.getElementById('nilaiInfo').innerText = '';
         return;
       }
 
-      tbody.innerHTML = rows.map(s => {
+      pagination.nilai = clampPage(pagination.nilai, rows.length);
+      const startIndex = (pagination.nilai - 1) * PAGE_SIZE;
+      const pageRows = rows.slice(startIndex, startIndex + PAGE_SIZE);
+      tbody.innerHTML = pageRows.map(s => {
         const nilai = nilaiDraft[String(s.nis)] || {};
         return `
           <tr class="hover:bg-slate-50">
@@ -2012,15 +2021,23 @@
           </tr>
         `;
       }).join('');
-      document.getElementById('nilaiInfo').innerText = 'Menampilkan ' + rows.length + ' anggota. Gunakan filter Sangga agar input lebih ringan.';
+      renderPager('pagerNilai', 'nilai', rows.length);
+      document.getElementById('nilaiInfo').innerText = 'Menampilkan ' + (startIndex + 1) + '-' + Math.min(startIndex + PAGE_SIZE, rows.length) + ' dari ' + rows.length + ' anggota.';
     }
 
     function nilaiInputCell(nis, key, value) {
       return `
         <td class="p-2 text-center">
-          <input type="number" min="0" max="100" value="${escapeAttr(value ?? '')}" data-nis="${escapeAttr(nis)}" data-key="${key}" class="input nilai-cell text-center font-semibold" placeholder="0">
+            <input type="number" min="0" max="100" value="${escapeAttr(value ?? '')}" data-nis="${escapeAttr(nis)}" data-key="${key}" oninput="updateNilaiDraft(this)" class="input nilai-cell text-center font-semibold" placeholder="0">
         </td>
       `;
+    }
+
+    function updateNilaiDraft(input) {
+      const nis = input.dataset.nis;
+      const key = input.dataset.key;
+      if (!nilaiDraft[nis]) nilaiDraft[nis] = {};
+      nilaiDraft[nis][key] = input.value;
     }
 
     function setNilaiLoading(isLoading) {
@@ -2040,14 +2057,19 @@
 
       const payloadMap = {};
       rows.forEach(s => {
+        const saved = nilaiDraft[String(s.nis)] || {};
         payloadMap[String(s.nis)] = { nis: s.nis };
-        aspekNilai.forEach(item => payloadMap[String(s.nis)][item.id] = '');
+        aspekNilai.forEach(item => payloadMap[String(s.nis)][item.id] = saved[item.id] ?? '');
       });
 
       document.querySelectorAll('.nilai-cell').forEach(input => {
         const nis = input.dataset.nis;
         const key = input.dataset.key;
-        if (payloadMap[nis]) payloadMap[nis][key] = input.value;
+        if (payloadMap[nis]) {
+          payloadMap[nis][key] = input.value;
+          if (!nilaiDraft[nis]) nilaiDraft[nis] = {};
+          nilaiDraft[nis][key] = input.value;
+        }
       });
 
       const payload = Object.values(payloadMap);
