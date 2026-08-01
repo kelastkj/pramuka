@@ -2287,11 +2287,14 @@
         ? dataSiswa.filter(s => [s.nis, s.nama, s.sangga].join(' ').toLowerCase().includes((document.getElementById('searchSiswa')?.value || '').toLowerCase().trim())).length
         : key === 'presensi'
           ? getFilteredPresensiSiswa().length
-          : getFilteredRekapRows().length;
+          : key === 'nilai'
+            ? getFilteredNilaiRows().length
+            : getFilteredRekapRows().length;
 
       pagination[key] = clampPage(pagination[key] + direction, totalRows);
       if (key === 'siswa') renderTableSiswa();
       if (key === 'presensi') renderTablePresensi();
+      if (key === 'nilai') renderNilaiTable();
       if (key === 'rekap') renderRekapTable();
     }
 
