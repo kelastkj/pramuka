@@ -221,6 +221,20 @@
       border-radius: 12px;
     }
 
+    .quick-default-grid {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    @media (max-width: 900px) {
+      .quick-default-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 520px) {
+      .quick-default-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
     @media (max-width: 767px) {
       .login-page { align-items: start; }
       .login-card { margin-block: 8px; }
@@ -1135,15 +1149,27 @@
                 </select>
               </div>
             </div>
-          </div>
-            <div class="mt-4 flex flex-col sm:flex-row sm:items-end gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-3">
-              <div class="flex-1">
-                <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Nilai dasar cepat</label>
-                <input id="nilaiDefault" type="number" min="0" max="100" class="input" placeholder="Contoh: 75">
+            </div>
+            <div class="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-3">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                <div>
+                  <p class="text-xs font-bold text-slate-700 uppercase">Nilai dasar per aspek</p>
+                  <p class="text-[11px] text-slate-500 mt-1">Kosongkan aspek yang tidak ingin diterapkan. Nilai yang sudah ada tetap aman.</p>
+                </div>
+                <button type="button" onclick="applyDefaultNilai()" class="btn-light px-4 whitespace-nowrap">
+                  <i class="fa-solid fa-wand-magic-sparkles text-teal-700"></i><span>Terapkan ke Filter</span>
+                </button>
               </div>
-              <button type="button" onclick="applyDefaultNilai()" class="btn-light px-4 whitespace-nowrap">
-                <i class="fa-solid fa-wand-magic-sparkles text-teal-700"></i><span>Terapkan ke Filter</span>
-              </button>
+              <div class="quick-default-grid">
+                <label class="block"><span class="block text-[10px] font-bold text-slate-500 mb-1">N2 5%</span><input id="nilaiDefault_n2" type="number" min="0" max="100" class="input text-center" placeholder="-" aria-label="Nilai dasar N2"></label>
+                <label class="block"><span class="block text-[10px] font-bold text-slate-500 mb-1">N3 10%</span><input id="nilaiDefault_n3" type="number" min="0" max="100" class="input text-center" placeholder="-" aria-label="Nilai dasar N3"></label>
+                <label class="block"><span class="block text-[10px] font-bold text-slate-500 mb-1">N4 15%</span><input id="nilaiDefault_n4" type="number" min="0" max="100" class="input text-center" placeholder="-" aria-label="Nilai dasar N4"></label>
+                <label class="block"><span class="block text-[10px] font-bold text-slate-500 mb-1">N5 10%</span><input id="nilaiDefault_n5" type="number" min="0" max="100" class="input text-center" placeholder="-" aria-label="Nilai dasar N5"></label>
+                <label class="block"><span class="block text-[10px] font-bold text-slate-500 mb-1">N6 10%</span><input id="nilaiDefault_n6" type="number" min="0" max="100" class="input text-center" placeholder="-" aria-label="Nilai dasar N6"></label>
+                <label class="block"><span class="block text-[10px] font-bold text-slate-500 mb-1">N7 10%</span><input id="nilaiDefault_n7" type="number" min="0" max="100" class="input text-center" placeholder="-" aria-label="Nilai dasar N7"></label>
+                <label class="block"><span class="block text-[10px] font-bold text-slate-500 mb-1">N8 20%</span><input id="nilaiDefault_n8" type="number" min="0" max="100" class="input text-center" placeholder="-" aria-label="Nilai dasar N8"></label>
+                <label class="block"><span class="block text-[10px] font-bold text-slate-500 mb-1">N9 10%</span><input id="nilaiDefault_n9" type="number" min="0" max="100" class="input text-center" placeholder="-" aria-label="Nilai dasar N9"></label>
+              </div>
             </div>
 
           <form onsubmit="handleSimpanNilaiBatch(event)" id="formNilai">
@@ -2097,17 +2123,40 @@
     }
 
     function applyDefaultNilai() {
-      const input = document.getElementById('nilaiDefault');
-      const value = Number(input?.value);
       const rows = getFilteredNilaiRows();
-      if (!Number.isFinite(value) || value < 0 || value > 100) {
-        return showToast('Nilai tidak valid', 'Masukkan nilai dasar antara 0 sampai 100.', 'error');
-      }
       if (rows.length === 0) {
         return showToast('Tidak ada anggota', 'Filter saat ini tidak memiliki anggota.', 'error');
       }
-      pendingDefaultNilai = { value: value, nisList: rows.map(s => String(s.nis)) };
-      document.getElementById('defaultNilaiConfirmText').innerText = 'Nilai ' + value + ' akan diterapkan ke ' + rows.length + ' anggota dan seluruh aspek penilaian pada filter aktif. Anda masih dapat mengubah nilai tertentu sebelum menyimpan.';
+
+      const defaults = {};
+      let hasDefault = false;
+      for (const item of aspekNilai) {
+        const raw = document.getElementById('nilaiDefault_' + item.id)?.value.trim() || '';
+        if (!raw) continue;
+        const value = Number(raw);
+        if (!Number.isFinite(value) || value < 0 || value > 100) {
+          return showToast('Nilai tidak valid', item.id.toUpperCase() + ' harus berada antara 0 sampai 100.', 'error');
+        }
+        defaults[item.id] = String(value);
+        hasDefault = true;
+      }
+      if (!hasDefault) {
+        return showToast('Nilai dasar kosong', 'Isi minimal satu nilai dasar aspek.', 'error');
+      }
+
+      let affectedCells = 0;
+      rows.forEach(s => {
+        const saved = nilaiDraft[String(s.nis)] || {};
+        Object.keys(defaults).forEach(key => {
+          if (saved[key] === '' || saved[key] === null || typeof saved[key] === 'undefined') affectedCells++;
+        });
+      });
+      if (affectedCells === 0) {
+        return showToast('Tidak ada kolom kosong', 'Semua aspek yang dipilih sudah memiliki nilai.', 'error');
+      }
+
+      pendingDefaultNilai = { defaults: defaults, nisList: rows.map(s => String(s.nis)), affectedCells: affectedCells };
+      document.getElementById('defaultNilaiConfirmText').innerText = 'Nilai dasar hanya akan mengisi ' + affectedCells + ' kolom yang masih kosong pada ' + rows.length + ' anggota. Nilai yang sudah ada tidak akan ditimpa.';
       document.getElementById('modalDefaultNilai').classList.add('active');
     }
 
@@ -2118,21 +2167,23 @@
 
     function confirmApplyDefaultNilai() {
       if (!pendingDefaultNilai) return;
-      const { value, nisList } = pendingDefaultNilai;
+      const { defaults, nisList, affectedCells } = pendingDefaultNilai;
       closeDefaultNilaiModal();
 
       nisList.forEach(nis => {
         if (!nilaiDraft[nis]) nilaiDraft[nis] = {};
         if (!nilaiDirty[nis]) nilaiDirty[nis] = {};
-        aspekNilai.forEach(item => {
-          const nextValue = String(value);
-          nilaiDraft[nis][item.id] = nextValue;
-          nilaiDirty[nis][item.id] = nextValue;
+        Object.keys(defaults).forEach(key => {
+          const current = nilaiDraft[nis][key];
+          if (current !== '' && current !== null && typeof current !== 'undefined') return;
+          const nextValue = defaults[key];
+          nilaiDraft[nis][key] = nextValue;
+          nilaiDirty[nis][key] = nextValue;
         });
       });
 
       renderNilaiTable();
-      showToast('Nilai dasar diterapkan', 'Nilai ' + value + ' diterapkan ke ' + nisList.length + ' anggota. Silakan ubah pengecualian sebelum menyimpan.', 'success');
+      showToast('Nilai dasar diterapkan', affectedCells + ' kolom kosong berhasil diisi. Nilai yang sudah ada tetap dipertahankan.', 'success');
     }
 
     function setNilaiLoading(isLoading) {
