@@ -703,6 +703,36 @@
     </div>
   </div>
 
+  <div id="modalSavingOverlay" class="modal-backdrop">
+    <div class="soft-card w-full max-w-md p-6 text-center shadow-2xl rounded-3xl border border-slate-200/80 bg-white/95 relative overflow-hidden">
+      <div class="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-teal-500 via-emerald-500 to-teal-600"></div>
+      
+      <div class="mx-auto w-16 h-16 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center mb-4 shadow-inner">
+        <i class="fa-solid fa-cloud-arrow-up text-2xl animate-bounce"></i>
+      </div>
+
+      <h3 id="savingTitle" class="text-xl font-extrabold text-slate-900">Proses Menyimpan Data</h3>
+      
+      <div class="mt-4 p-3.5 rounded-2xl bg-amber-50 border border-amber-200/70 text-amber-800 text-xs font-semibold flex items-center gap-3 text-left">
+        <i class="fa-solid fa-triangle-exclamation text-amber-600 text-lg shrink-0"></i>
+        <span>Peringatan: <strong>Jangan menutup atau memuat ulang halaman ini</strong> sampai proses selesai.</span>
+      </div>
+
+      <div class="mt-5 space-y-2">
+        <div class="flex justify-between items-center text-xs font-bold">
+          <span id="savingStatusText" class="text-slate-600">Menyiapkan pengiriman data...</span>
+          <span id="savingPercent" class="text-teal-700 font-extrabold">0%</span>
+        </div>
+
+        <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200">
+          <div id="savingProgressBar" class="h-full bg-gradient-to-r from-teal-500 to-emerald-600 rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
+        </div>
+
+        <p id="savingSubtext" class="text-[11px] text-slate-400 font-medium">Mohon tunggu sebentar, data sedang dikirim ke server...</p>
+      </div>
+    </div>
+  </div>
+
   <section id="page-login" class="page-view active login-page grid place-items-center print-hidden">
     <div class="login-card soft-card rounded-2xl overflow-hidden grid md:grid-cols-[1fr_0.95fr]">
       <div class="login-brand-panel p-7 md:p-10 text-white relative overflow-hidden">
@@ -1492,7 +1522,40 @@
     function refreshAll() {
       dashboardLoading = true;
       setDashboardLoading(true);
-      loadDataSiswa(() => loadDataRekap(true));
+      const tbody = document.getElementById('tableSiswaBody');
+      tbody.innerHTML = loadingRow(4, 'Memuat data anggota dan rekap...');
+
+      google.script.run
+        .withSuccessHandler(res => {
+          if (!res || !res.status) {
+            dashboardLoading = false;
+            setDashboardLoading(false);
+            renderDashboard();
+            tbody.innerHTML = emptyRow(4, 'Data belum bisa dimuat.');
+            return showToast('Gagal memuat data', (res && res.message) || 'Server tidak merespons.', 'error');
+          }
+
+          applySiswaData(res.siswa || [], () => {
+            lastRekap = {
+              rekap: res.rekap || [],
+              totalPertemuan: res.totalPertemuan || 0
+            };
+            pagination.rekap = clampPage(pagination.rekap, lastRekap.rekap.length);
+            document.getElementById('infoRekap').innerText = `Total Latihan Terekam: ${lastRekap.totalPertemuan} Kali`;
+            renderRekapTable();
+            dashboardLoading = false;
+            setDashboardLoading(false);
+            renderDashboard();
+          });
+        })
+        .withFailureHandler(() => {
+          dashboardLoading = false;
+          setDashboardLoading(false);
+          renderDashboard();
+          tbody.innerHTML = emptyRow(4, 'Data belum bisa dimuat.');
+          showToast('Gagal memuat data', 'Periksa koneksi atau akses spreadsheet.', 'error');
+        })
+        .getDashboardData(session.idPembina);
     }
 
     function loadDataSiswa(afterLoad) {
@@ -1501,29 +1564,33 @@
 
       google.script.run
         .withSuccessHandler(res => {
-          dataSiswa = Array.isArray(res) ? res : [];
-          presensiDraft = {};
-          dataSiswa.forEach(s => presensiDraft[String(s.nis)] = 'H');
-          pagination.siswa = clampPage(pagination.siswa, dataSiswa.length);
-          pagination.presensi = clampPage(pagination.presensi, dataSiswa.length);
-          renderTableSiswa();
-          renderSanggaFilters();
-          renderTablePresensi();
-          renderNilaiTable();
-          renderDashboard();
-          if (document.getElementById('page-presensi').classList.contains('active')) {
-            loadPresensiTanggal();
-          }
-          if (document.getElementById('page-nilai').classList.contains('active')) {
-            loadNilaiSangga();
-          }
-          if (typeof afterLoad === 'function') afterLoad();
+          applySiswaData(Array.isArray(res) ? res : [], afterLoad);
         })
         .withFailureHandler(() => {
           tbody.innerHTML = emptyRow(4, 'Data anggota belum bisa dimuat.');
           showToast('Gagal memuat anggota', 'Periksa koneksi atau akses spreadsheet.', 'error');
         })
         .getSiswaByPembina(session.idPembina);
+    }
+
+    function applySiswaData(siswa, afterLoad) {
+      dataSiswa = Array.isArray(siswa) ? siswa : [];
+      presensiDraft = {};
+      dataSiswa.forEach(s => presensiDraft[String(s.nis)] = 'H');
+      pagination.siswa = clampPage(pagination.siswa, dataSiswa.length);
+      pagination.presensi = clampPage(pagination.presensi, dataSiswa.length);
+      renderTableSiswa();
+      renderSanggaFilters();
+      renderTablePresensi();
+      renderNilaiTable();
+      renderDashboard();
+      if (document.getElementById('page-presensi').classList.contains('active')) {
+        loadPresensiTanggal();
+      }
+      if (document.getElementById('page-nilai').classList.contains('active')) {
+        loadNilaiSangga();
+      }
+      if (typeof afterLoad === 'function') afterLoad();
     }
 
     function renderTableSiswa() {
@@ -1821,6 +1888,30 @@
       setPresensiStatus(targetRows.length + ' anggota pada filter aktif ditandai ' + status + '.', 'success');
     }
 
+    function showSavingOverlay(title, initialStatus) {
+      document.getElementById('savingTitle').innerText = title || 'Proses Menyimpan Data';
+      document.getElementById('savingStatusText').innerText = initialStatus || 'Menyiapkan pengiriman...';
+      document.getElementById('savingPercent').innerText = '0%';
+      document.getElementById('savingProgressBar').style.width = '0%';
+      document.getElementById('savingSubtext').innerText = 'Mohon tunggu sebentar, data sedang dikirim ke server...';
+      document.getElementById('modalSavingOverlay').classList.add('active');
+      window.onbeforeunload = function() {
+        return 'Proses penyimpanan data sedang berlangsung. Yakin ingin meninggalkan halaman?';
+      };
+    }
+
+    function updateSavingProgress(step, totalSteps, message) {
+      const percent = Math.min(100, Math.round((step / totalSteps) * 100));
+      document.getElementById('savingStatusText').innerText = message || `Memproses ${step}/${totalSteps}...`;
+      document.getElementById('savingPercent').innerText = percent + '%';
+      document.getElementById('savingProgressBar').style.width = percent + '%';
+    }
+
+    function hideSavingOverlay() {
+      document.getElementById('modalSavingOverlay').classList.remove('active');
+      window.onbeforeunload = null;
+    }
+
     function handleSimpanPresensi(e) {
       e.preventDefault();
       if (dataSiswa.length === 0) return showToast('Presensi kosong', 'Tambahkan anggota terlebih dahulu.', 'error');
@@ -1835,21 +1926,38 @@
         status: presensiDraft[String(s.nis)] || document.querySelector(`input[name="pres_${index}"]:checked`)?.value || 'H'
       }));
 
+      // JSONP memakai GET, jadi data besar dipecah agar URL tetap aman untuk 300+ anggota.
+      const batchSize = 30;
+      const batches = [];
+      for (let i = 0; i < presensiList.length; i += batchSize) {
+        batches.push(presensiList.slice(i, i + batchSize));
+      }
+
+      showSavingOverlay('Menyimpan Presensi Pertemuan', `Menyiapkan ${presensiList.length} data presensi...`);
       setBusy(btn, true, '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...');
-      google.script.run
-        .withSuccessHandler(res => {
+
+      (async () => {
+        try {
+          let saved = 0;
+          for (let i = 0; i < batches.length; i++) {
+            updateSavingProgress(i + 1, batches.length, `Menyimpan batch ${i + 1} dari ${batches.length} (${saved + batches[i].length}/${presensiList.length} siswa)...`);
+            setBusy(btn, true, `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan ${i + 1}/${batches.length}...`);
+            const res = await apiCall('simpanPresensi', [tanggal, batches[i], session.idPembina]);
+            if (!res || !res.status) throw new Error((res && res.message) || 'Data presensi tidak berhasil disimpan.');
+            saved += batches[i].length;
+          }
+          hideSavingOverlay();
           setBusy(btn, false, original);
-          if (!res.status) return showToast('Gagal menyimpan presensi', res.message, 'error');
-          showToast('Presensi tersimpan', res.message, 'success');
+          showToast('Presensi tersimpan', saved + ' data presensi tanggal ' + tanggal + ' berhasil disimpan.', 'success');
           setPresensiStatus('Presensi berhasil disimpan. Memverifikasi data tersimpan...', 'success');
           loadPresensiTanggal();
           loadDataRekap(true);
-        })
-        .withFailureHandler(() => {
+        } catch (error) {
+          hideSavingOverlay();
           setBusy(btn, false, original);
-          showToast('Gagal menyimpan presensi', 'Server tidak merespons.', 'error');
-        })
-        .simpanPresensi(tanggal, presensiList, session.idPembina);
+          showToast('Gagal menyimpan presensi', error.message || 'Server tidak merespons.', 'error');
+        }
+      })();
     }
 
     function getFilteredNilaiRows() {
@@ -1945,7 +2053,6 @@
       const payload = Object.values(payloadMap);
       const btn = document.getElementById('btnSimpanNilai');
       const original = btn.innerHTML;
-      setBusy(btn, true, '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...');
 
       // JSONP memakai GET, jadi data besar dipecah agar URL tetap aman untuk 200+ anggota.
       const batchSize = 20;
@@ -1954,20 +2061,26 @@
         batches.push(payload.slice(i, i + batchSize));
       }
 
+      showSavingOverlay('Menyimpan Nilai Karakter', `Menyiapkan ${payload.length} data nilai...`);
+      setBusy(btn, true, '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...');
+
       (async () => {
         try {
           let saved = 0;
           for (let i = 0; i < batches.length; i++) {
+            updateSavingProgress(i + 1, batches.length, `Menyimpan batch ${i + 1} dari ${batches.length} (${saved + batches[i].length}/${payload.length} siswa)...`);
             setBusy(btn, true, `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan ${i + 1}/${batches.length}...`);
             const res = await apiCall('simpanNilaiBatch', [batches[i]]);
             if (!res || !res.status) throw new Error((res && res.message) || 'Data nilai tidak berhasil disimpan.');
             saved += batches[i].length;
           }
+          hideSavingOverlay();
           setBusy(btn, false, original);
           showToast('Nilai tersimpan', saved + ' data nilai berhasil disimpan.', 'success');
           loadDataRekap(true);
           loadNilaiSangga();
         } catch (error) {
+          hideSavingOverlay();
           setBusy(btn, false, original);
           showToast('Gagal menyimpan nilai', error.message || 'Server tidak merespons.', 'error');
         }

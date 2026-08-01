@@ -94,6 +94,7 @@ function runApiAction(action, args) {
     simpanNilaiBatch: simpanNilaiBatch,
     getNilaiByNisList: getNilaiByNisList,
     getNilaiByNis: getNilaiByNis,
+    getDashboardData: getDashboardData,
     getRekapData: getRekapData
   };
 
@@ -108,6 +109,17 @@ function runApiAction(action, args) {
 // 2. INISIALISASI DATABASE OTOMATIS
 // =================================================================
 function checkAndCreateTables() {
+  const cache = CacheService.getScriptCache();
+  if (cache.get('pramuka_tables_ready') === '1') return;
+
+  const lock = LockService.getScriptLock();
+  const lockAcquired = lock.tryLock(5000);
+  if (cache.get('pramuka_tables_ready') === '1') {
+    if (lockAcquired) lock.releaseLock();
+    return;
+  }
+
+  try {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   
   const sheets = {
@@ -134,6 +146,11 @@ function checkAndCreateTables() {
   if (sheetPembina.getLastRow() <= 1) {
     sheetPembina.appendRow(['P01', 'Kak Budi', 'budi', '12345']);
     sheetPembina.appendRow(['P02', 'Kak Siti', 'siti', '12345']);
+  }
+
+    cache.put('pramuka_tables_ready', '1', 21600);
+  } finally {
+    if (lockAcquired) lock.releaseLock();
   }
 }
 
@@ -570,75 +587,87 @@ function getRekapData(idPembina) {
     const presensiData = getSheetData('Presensi');
     const nilaiData = getSheetData('Nilai');
 
-    let rekap = [];
-    let dates = new Set();
-    
-    if(presensiData.length > 1) {
-      for(let i = 1; i < presensiData.length; i++){
-        if(String(presensiData[i][3]) === String(idPembina)) {
-           dates.add(normalizeDateKey(presensiData[i][0])); 
-        }
-      }
+    const pembinaKey = String(idPembina);
+    const dates = {};
+    const presensiByNis = {};
+    const nilaiByNis = {};
+
+    // Index each sheet once. The previous implementation rescanned all
+    // attendance and score rows for every student.
+    for (let i = 1; i < presensiData.length; i++) {
+      if (String(presensiData[i][3]) !== pembinaKey) continue;
+      const nisKey = String(presensiData[i][1]).trim();
+      const dateKey = normalizeDateKey(presensiData[i][0]);
+      dates[dateKey] = true;
+      if (!presensiByNis[nisKey]) presensiByNis[nisKey] = {};
+      presensiByNis[nisKey][dateKey] = String(presensiData[i][2]).trim().toUpperCase();
     }
-    let totalPertemuan = dates.size;
 
-    if(siswaData.length > 1) {
-      for (let i = 1; i < siswaData.length; i++) {
-        if (String(siswaData[i][3]) === String(idPembina)) {
-          let nis = siswaData[i][0];
-          let nama = siswaData[i][1];
-          let sangga = siswaData[i][2];
-          
-          let hadir = 0, izin = 0, sakit = 0, alpa = 0;
-          let statusPerTanggal = {};
-          
-          if(presensiData.length > 1) {
-            for(let p = 1; p < presensiData.length; p++) {
-              if(String(presensiData[p][1]) === String(nis) && String(presensiData[p][3]) === String(idPembina)) {
-                statusPerTanggal[normalizeDateKey(presensiData[p][0])] = String(presensiData[p][2]).toUpperCase();
-              }
-            }
-          }
+    for (let i = 1; i < nilaiData.length; i++) {
+      const nisKey = String(nilaiData[i][0]).trim();
+      nilaiByNis[nisKey] = {
+        n2: Number(nilaiData[i][1]) || 0, n3: Number(nilaiData[i][2]) || 0,
+        n4: Number(nilaiData[i][3]) || 0, n5: Number(nilaiData[i][4]) || 0,
+        n6: Number(nilaiData[i][5]) || 0, n7: Number(nilaiData[i][6]) || 0,
+        n8: Number(nilaiData[i][7]) || 0, n9: Number(nilaiData[i][8]) || 0
+      };
+    }
 
-          Object.keys(statusPerTanggal).forEach(tgl => {
-            let status = statusPerTanggal[tgl];
-            if(status === 'H') hadir++;
-            else if(status === 'I') izin++;
-            else if(status === 'S') sakit++;
-            else alpa++;
-          });
-          
-          let persentaseHadir = totalPertemuan === 0 ? 0 : (hadir / totalPertemuan) * 100;
-          let n = { n2:0, n3:0, n4:0, n5:0, n6:0, n7:0, n8:0, n9:0 };
-          
-          if(nilaiData.length > 1) {
-            for(let k = 1; k < nilaiData.length; k++) {
-              if(String(nilaiData[k][0]) === String(nis)) {
-                n = {
-                  n2: Number(nilaiData[k][1]) || 0, n3: Number(nilaiData[k][2]) || 0, 
-                  n4: Number(nilaiData[k][3]) || 0, n5: Number(nilaiData[k][4]) || 0,
-                  n6: Number(nilaiData[k][5]) || 0, n7: Number(nilaiData[k][6]) || 0, 
-                  n8: Number(nilaiData[k][7]) || 0, n9: Number(nilaiData[k][8]) || 0
-                };
-                break;
-              }
-            }
-          }
+    const totalPertemuan = Object.keys(dates).length;
+    const rekap = [];
 
-          let totalSkor = (persentaseHadir * 0.10) + (n.n2 * 0.05) + (n.n3 * 0.10) + 
-                          (n.n4 * 0.15) + (n.n5 * 0.10) + (n.n6 * 0.10) + 
-                          (n.n7 * 0.10) + (n.n8 * 0.20) + (n.n9 * 0.10);
+    for (let i = 1; i < siswaData.length; i++) {
+      if (String(siswaData[i][3]) !== pembinaKey) continue;
 
-          rekap.push({
-            nis: nis, nama: nama, sangga: sangga,
-            presensi: { h: hadir, i: izin, s: sakit, a: alpa, skor: persentaseHadir },
-            nilai: n, skorAkhir: totalSkor.toFixed(2)
-          });
-        }
-      }
+      const nis = siswaData[i][0];
+      const statusPerTanggal = presensiByNis[String(nis).trim()] || {};
+      let hadir = 0, izin = 0, sakit = 0, alpa = 0;
+      Object.keys(statusPerTanggal).forEach(tgl => {
+        const status = statusPerTanggal[tgl];
+        if (status === 'H') hadir++;
+        else if (status === 'I') izin++;
+        else if (status === 'S') sakit++;
+        else alpa++;
+      });
+
+      const persentaseHadir = totalPertemuan === 0 ? 0 : (hadir / totalPertemuan) * 100;
+      const n = nilaiByNis[String(nis).trim()] || { n2:0, n3:0, n4:0, n5:0, n6:0, n7:0, n8:0, n9:0 };
+      const totalSkor = (persentaseHadir * 0.10) + (n.n2 * 0.05) + (n.n3 * 0.10) +
+                        (n.n4 * 0.15) + (n.n5 * 0.10) + (n.n6 * 0.10) +
+                        (n.n7 * 0.10) + (n.n8 * 0.20) + (n.n9 * 0.10);
+
+      rekap.push({
+        nis: nis, nama: siswaData[i][1], sangga: siswaData[i][2],
+        presensi: { h: hadir, i: izin, s: sakit, a: alpa, skor: persentaseHadir },
+        nilai: n, skorAkhir: totalSkor.toFixed(2)
+      });
     }
     
     return { status: true, rekap: rekap, totalPertemuan: totalPertemuan };
+  } catch (error) {
+    return { status: false, message: error.message };
+  }
+}
+
+function getDashboardData(idPembina) {
+  try {
+    const rekapResult = getRekapData(idPembina);
+    if (!rekapResult.status) return rekapResult;
+
+    // Rekap already contains the current pembina's complete student list,
+    // so the initial dashboard load does not need a second Siswa query.
+    const siswa = (rekapResult.rekap || []).map(row => ({
+      nis: row.nis,
+      nama: row.nama,
+      sangga: row.sangga
+    }));
+
+    return {
+      status: true,
+      siswa: siswa,
+      rekap: rekapResult.rekap || [],
+      totalPertemuan: rekapResult.totalPertemuan || 0
+    };
   } catch (error) {
     return { status: false, message: error.message };
   }
