@@ -348,19 +348,23 @@ function simpanPresensi(tanggal, presensiList, idPembina) {
       return { status: false, message: 'Tidak ada data presensi untuk disimpan.' };
     }
 
-    const allData = sheet.getDataRange().getValues();
+    const lastRow = sheet.getLastRow();
+    const data = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 4).getValues() : [];
     const rowMap = {};
 
-    for (let index = 1; index < allData.length; index++) {
-      const row = allData[index];
+    for (let index = 0; index < data.length; index++) {
+      const row = data[index];
       const key = [
         normalizeDateKey(row[0]),
         String(row[1]).trim(),
         String(row[3]).trim()
       ].join('|');
-      rowMap[key] = index;
+      rowMap[key] = index + 2;
     }
 
+    const updates = {};
+    const newRows = [];
+    const pendingRows = {};
     presensiList.forEach(p => {
       const rowData = [tanggal, p.nis, p.status, idPembina];
       const key = [
@@ -370,14 +374,32 @@ function simpanPresensi(tanggal, presensiList, idPembina) {
       ].join('|');
 
       if (typeof rowMap[key] === 'number') {
-        allData[rowMap[key]] = rowData;
+        updates[rowMap[key]] = rowData;
+      } else if (typeof pendingRows[key] === 'number') {
+        newRows[pendingRows[key]] = rowData;
       } else {
-        rowMap[key] = allData.length;
-        allData.push(rowData);
+        pendingRows[key] = newRows.length;
+        newRows.push(rowData);
       }
     });
 
-    sheet.getRange(1, 1, allData.length, 4).setValues(allData);
+    // Update existing rows in contiguous blocks to minimize Spreadsheet calls.
+    const updateRows = Object.keys(updates).map(Number).sort((a, b) => a - b);
+    let blockStart = 0;
+    while (blockStart < updateRows.length) {
+      let blockEnd = blockStart;
+      while (blockEnd + 1 < updateRows.length && updateRows[blockEnd + 1] === updateRows[blockEnd] + 1) {
+        blockEnd++;
+      }
+      const blockRows = updateRows.slice(blockStart, blockEnd + 1);
+      sheet.getRange(blockRows[0], 1, blockRows.length, 4).setValues(blockRows.map(rowNumber => updates[rowNumber]));
+      blockStart = blockEnd + 1;
+    }
+
+    if (newRows.length > 0) {
+      sheet.getRange(sheet.getLastRow() + 1, 1, newRows.length, 4).setValues(newRows);
+    }
+
     return { status: true, message: presensiList.length + ' data presensi tanggal ' + tanggal + ' berhasil disimpan atau diperbarui.' };
   } catch (e) {
     return { status: false, message: e.message };

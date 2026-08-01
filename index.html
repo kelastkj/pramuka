@@ -1934,7 +1934,7 @@
       }));
 
       // JSONP memakai GET, jadi data besar dipecah agar URL tetap aman untuk 300+ anggota.
-      const batchSize = 30;
+      const batchSize = 50;
       const batches = [];
       for (let i = 0; i < presensiList.length; i += batchSize) {
         batches.push(presensiList.slice(i, i + batchSize));
