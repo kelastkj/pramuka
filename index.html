@@ -1110,6 +1110,14 @@
                   <input id="searchNilai" oninput="pagination.nilai = 1; renderNilaiTable()" class="input pl-11" placeholder="Nama atau NIS">
                 </div>
               </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Baris per halaman</label>
+                <select id="pageSizeNilai" class="input cursor-pointer" onchange="pagination.nilai = 1; renderNilaiTable()">
+                  <option value="25" selected>25 siswa</option>
+                  <option value="50">50 siswa</option>
+                  <option value="100">100 siswa</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -1258,6 +1266,8 @@
     };
     let presensiDraft = {};
     let nilaiDraft = {};
+    let nilaiOriginal = {};
+    let nilaiDirty = {};
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzy5D-tmKoq0kJI4FbTJY0hvsGNSuqXsUfEfSPmMpMhny7WJ94y280Ddp_EU93_Gof0BQ/exec';
     const apiPending = {};
 
@@ -1971,6 +1981,13 @@
       return getFilteredNilaiSiswa();
     }
 
+    function getPageSize(key) {
+      if (key === 'nilai') {
+        return Number(document.getElementById('pageSizeNilai')?.value) || 25;
+      }
+      return PAGE_SIZE;
+    }
+
     function loadNilaiSangga() {
       const rows = getFilteredNilaiSiswa();
       renderNilaiTable();
@@ -1984,7 +2001,9 @@
           setNilaiLoading(false);
           if (!res.status) return showToast('Nilai belum dimuat', res.message, 'error');
           nilaiDraft = res.nilai || {};
-          pagination.nilai = clampPage(pagination.nilai, rows.length);
+          nilaiOriginal = JSON.parse(JSON.stringify(nilaiDraft));
+          nilaiDirty = {};
+          pagination.nilai = clampPage(pagination.nilai, rows.length, 'nilai');
           renderNilaiTable();
           document.getElementById('nilaiInfo').innerText = rows.length + ' anggota siap dinilai pada filter aktif.';
         })
@@ -2006,9 +2025,10 @@
         return;
       }
 
-      pagination.nilai = clampPage(pagination.nilai, rows.length);
-      const startIndex = (pagination.nilai - 1) * PAGE_SIZE;
-      const pageRows = rows.slice(startIndex, startIndex + PAGE_SIZE);
+      const pageSize = getPageSize('nilai');
+      pagination.nilai = clampPage(pagination.nilai, rows.length, 'nilai');
+      const startIndex = (pagination.nilai - 1) * pageSize;
+      const pageRows = rows.slice(startIndex, startIndex + pageSize);
       tbody.innerHTML = pageRows.map(s => {
         const nilai = nilaiDraft[String(s.nis)] || {};
         return `
@@ -2022,7 +2042,7 @@
         `;
       }).join('');
       renderPager('pagerNilai', 'nilai', rows.length);
-      document.getElementById('nilaiInfo').innerText = 'Menampilkan ' + (startIndex + 1) + '-' + Math.min(startIndex + PAGE_SIZE, rows.length) + ' dari ' + rows.length + ' anggota.';
+      document.getElementById('nilaiInfo').innerText = 'Menampilkan ' + (startIndex + 1) + '-' + Math.min(startIndex + pageSize, rows.length) + ' dari ' + rows.length + ' anggota.';
     }
 
     function nilaiInputCell(nis, key, value) {
@@ -2038,6 +2058,16 @@
       const key = input.dataset.key;
       if (!nilaiDraft[nis]) nilaiDraft[nis] = {};
       nilaiDraft[nis][key] = input.value;
+      const originalValue = String(nilaiOriginal[nis]?.[key] ?? '');
+      if (String(input.value) === originalValue) {
+        if (nilaiDirty[nis]) {
+          delete nilaiDirty[nis][key];
+          if (Object.keys(nilaiDirty[nis]).length === 0) delete nilaiDirty[nis];
+        }
+      } else {
+        if (!nilaiDirty[nis]) nilaiDirty[nis] = {};
+        nilaiDirty[nis][key] = input.value;
+      }
     }
 
     function setNilaiLoading(isLoading) {
@@ -2053,10 +2083,11 @@
     function handleSimpanNilaiBatch(e) {
       e.preventDefault();
       const rows = getFilteredNilaiRows();
-      if (rows.length === 0) return showToast('Tidak ada anggota', 'Filter saat ini tidak memiliki anggota untuk dinilai.', 'error');
+      const changedRows = rows.filter(s => nilaiDirty[String(s.nis)] && Object.keys(nilaiDirty[String(s.nis)]).length > 0);
+      if (changedRows.length === 0) return showToast('Belum ada perubahan', 'Ubah nilai siswa terlebih dahulu sebelum menyimpan.', 'error');
 
       const payloadMap = {};
-      rows.forEach(s => {
+      changedRows.forEach(s => {
         const saved = nilaiDraft[String(s.nis)] || {};
         payloadMap[String(s.nis)] = { nis: s.nis };
         aspekNilai.forEach(item => payloadMap[String(s.nis)][item.id] = saved[item.id] ?? '');
@@ -2069,6 +2100,8 @@
           payloadMap[nis][key] = input.value;
           if (!nilaiDraft[nis]) nilaiDraft[nis] = {};
           nilaiDraft[nis][key] = input.value;
+          if (!nilaiDirty[nis]) nilaiDirty[nis] = {};
+          nilaiDirty[nis][key] = input.value;
         }
       });
 
@@ -2083,7 +2116,7 @@
         batches.push(payload.slice(i, i + batchSize));
       }
 
-      showSavingOverlay('Menyimpan Nilai Karakter', `Menyiapkan ${payload.length} data nilai...`);
+      showSavingOverlay('Menyimpan Nilai Karakter', `Menyiapkan ${payload.length} perubahan nilai...`);
       setBusy(btn, true, '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...');
 
       (async () => {
@@ -2273,12 +2306,12 @@
       return rows.slice(start, start + PAGE_SIZE);
     }
 
-    function getTotalPages(totalRows) {
-      return Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+    function getTotalPages(totalRows, key) {
+      return Math.max(1, Math.ceil(totalRows / getPageSize(key)));
     }
 
-    function clampPage(page, totalRows) {
-      return Math.min(Math.max(1, page), getTotalPages(totalRows));
+    function clampPage(page, totalRows, key) {
+      return Math.min(Math.max(1, page), getTotalPages(totalRows, key));
     }
 
     function changePage(key, direction) {
@@ -2291,7 +2324,7 @@
             ? getFilteredNilaiRows().length
             : getFilteredRekapRows().length;
 
-      pagination[key] = clampPage(pagination[key] + direction, totalRows);
+      pagination[key] = clampPage(pagination[key] + direction, totalRows, key);
       if (key === 'siswa') renderTableSiswa();
       if (key === 'presensi') renderTablePresensi();
       if (key === 'nilai') renderNilaiTable();
@@ -2306,10 +2339,11 @@
         return;
       }
 
-      const totalPages = getTotalPages(totalRows);
-      const page = clampPage(pagination[key], totalRows);
-      const start = ((page - 1) * PAGE_SIZE) + 1;
-      const end = Math.min(page * PAGE_SIZE, totalRows);
+      const pageSize = getPageSize(key);
+      const totalPages = getTotalPages(totalRows, key);
+      const page = clampPage(pagination[key], totalRows, key);
+      const start = ((page - 1) * pageSize) + 1;
+      const end = Math.min(page * pageSize, totalRows);
       el.innerHTML = `
         <span>Menampilkan ${start}-${end} dari ${totalRows} data</span>
         <div class="pager-actions">
