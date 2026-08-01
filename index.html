@@ -1119,6 +1119,15 @@
                 </select>
               </div>
             </div>
+            <div class="mt-4 flex flex-col sm:flex-row sm:items-end gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-3">
+              <div class="flex-1">
+                <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Nilai dasar cepat</label>
+                <input id="nilaiDefault" type="number" min="0" max="100" class="input" placeholder="Contoh: 75">
+              </div>
+              <button type="button" onclick="applyDefaultNilai()" class="btn-light px-4 whitespace-nowrap">
+                <i class="fa-solid fa-wand-magic-sparkles text-teal-700"></i><span>Terapkan ke Filter</span>
+              </button>
+            </div>
           </div>
 
           <form onsubmit="handleSimpanNilaiBatch(event)" id="formNilai">
@@ -2068,6 +2077,35 @@
         if (!nilaiDirty[nis]) nilaiDirty[nis] = {};
         nilaiDirty[nis][key] = input.value;
       }
+    }
+
+    function applyDefaultNilai() {
+      const input = document.getElementById('nilaiDefault');
+      const value = Number(input?.value);
+      const rows = getFilteredNilaiRows();
+      if (!Number.isFinite(value) || value < 0 || value > 100) {
+        return showToast('Nilai tidak valid', 'Masukkan nilai dasar antara 0 sampai 100.', 'error');
+      }
+      if (rows.length === 0) {
+        return showToast('Tidak ada anggota', 'Filter saat ini tidak memiliki anggota.', 'error');
+      }
+      if (rows.length > 25 && !window.confirm('Terapkan nilai ' + value + ' ke ' + rows.length + ' anggota dan seluruh aspek?')) {
+        return;
+      }
+
+      rows.forEach(s => {
+        const nis = String(s.nis);
+        if (!nilaiDraft[nis]) nilaiDraft[nis] = {};
+        if (!nilaiDirty[nis]) nilaiDirty[nis] = {};
+        aspekNilai.forEach(item => {
+          const nextValue = String(value);
+          nilaiDraft[nis][item.id] = nextValue;
+          nilaiDirty[nis][item.id] = nextValue;
+        });
+      });
+
+      renderNilaiTable();
+      showToast('Nilai dasar diterapkan', 'Nilai ' + value + ' diterapkan ke ' + rows.length + ' anggota. Silakan ubah pengecualian sebelum menyimpan.', 'success');
     }
 
     function setNilaiLoading(isLoading) {
