@@ -733,6 +733,22 @@
     </div>
   </div>
 
+  <div id="modalDefaultNilai" class="modal-backdrop">
+    <div class="soft-card w-full max-w-md p-6 rounded-3xl border border-emerald-100 bg-white shadow-2xl">
+      <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-teal-700 flex items-center justify-center mb-5">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+      </div>
+      <h2 class="text-xl font-extrabold text-slate-950">Terapkan Nilai Dasar?</h2>
+      <p id="defaultNilaiConfirmText" class="text-sm text-slate-500 mt-2 leading-6"></p>
+      <div class="flex flex-col sm:flex-row gap-3 mt-6">
+        <button type="button" onclick="confirmApplyDefaultNilai()" class="btn-primary px-5 flex-1">
+          <i class="fa-solid fa-check"></i><span>Ya, Terapkan</span>
+        </button>
+        <button type="button" onclick="closeDefaultNilaiModal()" class="btn-light px-5">Batal</button>
+      </div>
+    </div>
+  </div>
+
   <section id="page-login" class="page-view active login-page grid place-items-center print-hidden">
     <div class="login-card soft-card rounded-2xl overflow-hidden grid md:grid-cols-[1fr_0.95fr]">
       <div class="login-brand-panel p-7 md:p-10 text-white relative overflow-hidden">
@@ -1119,6 +1135,7 @@
                 </select>
               </div>
             </div>
+          </div>
             <div class="mt-4 flex flex-col sm:flex-row sm:items-end gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-3">
               <div class="flex-1">
                 <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Nilai dasar cepat</label>
@@ -1128,7 +1145,6 @@
                 <i class="fa-solid fa-wand-magic-sparkles text-teal-700"></i><span>Terapkan ke Filter</span>
               </button>
             </div>
-          </div>
 
           <form onsubmit="handleSimpanNilaiBatch(event)" id="formNilai">
             <div class="overflow-hidden rounded-2xl border border-slate-200">
@@ -1277,6 +1293,7 @@
     let nilaiDraft = {};
     let nilaiOriginal = {};
     let nilaiDirty = {};
+    let pendingDefaultNilai = null;
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzy5D-tmKoq0kJI4FbTJY0hvsGNSuqXsUfEfSPmMpMhny7WJ94y280Ddp_EU93_Gof0BQ/exec';
     const apiPending = {};
 
@@ -2089,12 +2106,22 @@
       if (rows.length === 0) {
         return showToast('Tidak ada anggota', 'Filter saat ini tidak memiliki anggota.', 'error');
       }
-      if (rows.length > 25 && !window.confirm('Terapkan nilai ' + value + ' ke ' + rows.length + ' anggota dan seluruh aspek?')) {
-        return;
-      }
+      pendingDefaultNilai = { value: value, nisList: rows.map(s => String(s.nis)) };
+      document.getElementById('defaultNilaiConfirmText').innerText = 'Nilai ' + value + ' akan diterapkan ke ' + rows.length + ' anggota dan seluruh aspek penilaian pada filter aktif. Anda masih dapat mengubah nilai tertentu sebelum menyimpan.';
+      document.getElementById('modalDefaultNilai').classList.add('active');
+    }
 
-      rows.forEach(s => {
-        const nis = String(s.nis);
+    function closeDefaultNilaiModal() {
+      pendingDefaultNilai = null;
+      document.getElementById('modalDefaultNilai').classList.remove('active');
+    }
+
+    function confirmApplyDefaultNilai() {
+      if (!pendingDefaultNilai) return;
+      const { value, nisList } = pendingDefaultNilai;
+      closeDefaultNilaiModal();
+
+      nisList.forEach(nis => {
         if (!nilaiDraft[nis]) nilaiDraft[nis] = {};
         if (!nilaiDirty[nis]) nilaiDirty[nis] = {};
         aspekNilai.forEach(item => {
@@ -2105,7 +2132,7 @@
       });
 
       renderNilaiTable();
-      showToast('Nilai dasar diterapkan', 'Nilai ' + value + ' diterapkan ke ' + rows.length + ' anggota. Silakan ubah pengecualian sebelum menyimpan.', 'success');
+      showToast('Nilai dasar diterapkan', 'Nilai ' + value + ' diterapkan ke ' + nisList.length + ' anggota. Silakan ubah pengecualian sebelum menyimpan.', 'success');
     }
 
     function setNilaiLoading(isLoading) {
